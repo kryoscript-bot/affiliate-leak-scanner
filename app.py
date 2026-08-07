@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
+import html
 
 st.set_page_config(
     page_title="Affiliate Leak Protocol Engine Pro v4.0",
@@ -62,7 +63,7 @@ st.markdown("""
         background: #f3f4f6;
         border: 1px solid #d1d5db;
         border-radius: 6px;
-        padding: 4px 10px;
+        padding: 5px 12px;
         font-size: 13px;
         cursor: pointer;
         color: #374151;
@@ -71,6 +72,9 @@ st.markdown("""
     }
     .copy-btn:hover {
         background: #e5e7eb;
+    }
+    .copy-btn:active {
+        background: #d1d5db;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -262,9 +266,16 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
 Originating Link Vector: {item['url']}
 System Flag Status: {item['status']}
 Target Segment Identity: {item['network']}"""
+                            # Proper escaping for data attribute
+                            safe_text = html.escape(copy_text).replace("'", "&#39;").replace('"', "&quot;")
+                            
                             st.markdown(f"""
                             <div class="log-card">
-                                <button class="copy-btn" onclick="navigator.clipboard.writeText(`{copy_text.replace('`', '\\`')}`)">📋 Copy</button>
+                                <button class="copy-btn" 
+                                    data-text="{safe_text}"
+                                    onclick="navigator.clipboard.writeText(this.getAttribute('data-text').replace(/&#39;/g, \\'').replace(/&quot;/g, '\\"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'))">
+                                    📋 Copy
+                                </button>
                                 <b>Node Index #{idx}</b><br><br>
                                 <b>Originating Link Vector:</b><br>
                                 {item['url']}<br><br>
@@ -284,9 +295,15 @@ Campaign Component: {item['url']}
 Resolved Merchant Landing: {item['destination']}
 Telemetry Diagnostic: {item['status']}
 Identified Asset Framework: {item['network']}"""
+                            safe_text = html.escape(copy_text).replace("'", "&#39;").replace('"', "&quot;")
+                            
                             st.markdown(f"""
                             <div class="log-card">
-                                <button class="copy-btn" onclick="navigator.clipboard.writeText(`{copy_text.replace('`', '\\`')}`)">📋 Copy</button>
+                                <button class="copy-btn" 
+                                    data-text="{safe_text}"
+                                    onclick="navigator.clipboard.writeText(this.getAttribute('data-text').replace(/&#39;/g, \\'').replace(/&quot;/g, '\\"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'))">
+                                    📋 Copy
+                                </button>
                                 <b>Leak Event #{idx}</b><br><br>
                                 <b>Campaign Component:</b><br>
                                 {item['url']}<br><br>
@@ -307,9 +324,15 @@ Identified Asset Framework: {item['network']}"""
 Source Tracking Vector: {item['url']}
 Final Target Resolution: {item['destination']}
 Classified System Network: {item['network']}"""
+                            safe_text = html.escape(copy_text).replace("'", "&#39;").replace('"', "&quot;")
+                            
                             st.markdown(f"""
                             <div class="log-card">
-                                <button class="copy-btn" onclick="navigator.clipboard.writeText(`{copy_text.replace('`', '\\`')}`)">📋 Copy</button>
+                                <button class="copy-btn" 
+                                    data-text="{safe_text}"
+                                    onclick="navigator.clipboard.writeText(this.getAttribute('data-text').replace(/&#39;/g, \\'').replace(/&quot;/g, '\\"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'))">
+                                    📋 Copy
+                                </button>
                                 <b>Active Stream #{idx}</b><br><br>
                                 <b>Source Tracking Vector:</b><br>
                                 {item['url']}<br><br>
