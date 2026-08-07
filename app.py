@@ -1,4 +1,3 @@
-:
 
 import streamlit as stimport requestsfrom bs4 import BeautifulSoupfrom concurrent.futures import ThreadPoolExecutorimport pandas as pdfrom urllib.parse import urlparse
 # ==============================================================================# 1. ENTERPRISE ENGINE INITIALIZATION & CORE CONFIG# ==============================================================================
@@ -24,11 +23,7 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.04);
         text-align: center;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .metric-container-box:hover { 
-        transform: translateY(-5px); 
-        box-shadow: 0 15px 35px rgba(0, 242, 254, 0.15);
-        border: 1px solid rgba(0, 242, 254, 0.2);
+        margin-bottom: 15px;
     }
     
     /* Main CTA Scan Action Element */
@@ -150,7 +145,7 @@ def trace_single_endpoint_health(link_url):
         else:
             return {
                 "url": link_url, "type": "Neutral Route", 
-                "status": "临 Standard Structural Route Path", 
+                "status": "Standard Structural Route Path", 
                 "network": detected_network, "destination": final_destination_route
             }
             
@@ -179,20 +174,20 @@ def trace_single_endpoint_health(link_url):
                 # Dynamic Logic Filtering Arrays
                 dead_links_list = [item for item in telemetry_outputs if item["type"] == "Dead Link"]
                 revenue_leaks_list = [item for item in telemetry_outputs if item["type"] == "Revenue Leak"]
+                safe_affiliate_list = [item for item in telemetry_outputs if item["type"] == "Safe Affiliate"]
 
-safe_affiliate_list = [item for item in telemetry_outputs if item["type"] == "Safe Affiliate"]
 neutral_list = [item for item in telemetry_outputs if item["type"] == "Neutral Route"]
 st.markdown("---")
-# Render Cyber Executive Dashboard Matrix
+# Render Cyber Executive Dashboard Matrix (Fixed Syntax Brackets)
 m_col1, m_col2, m_col3, m_col4 = st.columns(4)
 with m_col1:
-st.markdown(f"TOTAL SCANNED{len(telemetry_outputs)}", unsafe_allow_html=True)
+st.markdown(f'TOTAL SCANNED{len(telemetry_outputs)}', unsafe_allow_html=True)
 with m_col2:
-st.markdown(f"🚨 DEAD LINKS{len(dead_links_list)}", unsafe_allow_html=True)
+st.markdown(f'🚨 DEAD LINKS{len(dead_links_list)}', unsafe_allow_html=True)
 with m_col3:
-st.markdown(f"💸 REVENUE LEAKS{len(revenue_leaks_list)}", unsafe_allow_html=True)
+st.markdown(f'💸 REVENUE LEAKS{len(revenue_leaks_list)}', unsafe_allow_html=True)
 with m_col4:
-st.markdown(f"🛡️ SAFE CAMPAIGNS{len(safe_affiliate_list)}", unsafe_allow_html=True)
+st.markdown(f'🛡️ SAFE CAMPAIGNS{len(safe_affiliate_list)}', unsafe_allow_html=True)
 st.markdown("
 ", unsafe_allow_html=True)
 # Master Decoupled Tabs Workspace Interface Layout
@@ -269,5 +264,4 @@ data=csv,
 file_name="complete_link_telemetry_audit.csv",
 mime="text/csv"
 )
-
 
