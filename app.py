@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 
 st.set_page_config(
-    page_title="Affiliate Leak Protocol Engine Pro v4.0",
+    page_title="Dead-Link & Revenue Leak Scanner for Affiliates",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
