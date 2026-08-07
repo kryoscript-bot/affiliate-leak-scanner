@@ -6,9 +6,11 @@ import pandas as pd
 from urllib.parse import urlparse, urljoin
 from collections import Counter
 import time
+import re
+import json
 
 st.set_page_config(
-    page_title="Affiliate Leak Protocol Engine Pro v5.0 Ultra",
+    page_title="Affiliate Leak Protocol Engine Pro v5.1",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -18,7 +20,6 @@ st.markdown("""
     <style>
     .main { background-color: #0b0f19 !important; color: #cbd5e1 !important; font-family: 'Inter', sans-serif; }
     h1 { color: #00f2fe !important; font-weight: 800 !important; letter-spacing: -1.5px; text-shadow: 0 0 15px rgba(0,242,254,0.25); margin-bottom: 5px; }
-    h3 { color: #ffffff !important; font-weight: 700 !important; }
     .metric-container-box {
         background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
         padding: 22px;
@@ -38,11 +39,6 @@ st.markdown("""
         border: none !important;
         box-shadow: 0 4px 20px rgba(0, 242, 254, 0.35);
         width: 100%;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 30px rgba(0, 242, 254, 0.6);
     }
     .log-card {
         background-color: #ffffff !important;
@@ -53,7 +49,6 @@ st.markdown("""
         border: 1px solid #e5e7eb;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
-    .log-card b { color: #111827 !important; }
     .recommend-card {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         border: 1px solid #334155;
@@ -62,11 +57,7 @@ st.markdown("""
         margin-bottom: 16px;
         color: #e2e8f0;
     }
-    .recommend-card h4 {
-        color: #38bdf8 !important;
-        margin-top: 0;
-        margin-bottom: 12px;
-    }
+    .recommend-card h4 { color: #38bdf8 !important; margin-top: 0; margin-bottom: 12px; }
     .priority-high { border-left: 5px solid #ef4444; }
     .priority-medium { border-left: 5px solid #f59e0b; }
     .priority-low { border-left: 5px solid #22c55e; }
@@ -78,17 +69,17 @@ st.markdown("""
         margin-bottom: 14px;
         color: #e0e7ff;
     }
-    .fix-card h4 {
-        color: #a5b4fc !important;
-        margin-top: 0;
-        margin-bottom: 10px;
+    .fix-card h4 { color: #a5b4fc !important; margin-top: 0; margin-bottom: 10px; }
+    .no-affiliate-box {
+        background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);
+        border: 1px solid #ef4444;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 20px;
+        color: #fecaca;
+        text-align: center;
     }
-    .logo-container {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 6px;
-    }
+    .logo-container { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
     .logo-icon {
         font-size: 52px;
         background: linear-gradient(135deg, #00f2fe, #4facfe);
@@ -96,38 +87,31 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.5));
     }
-    .tagline {
-        color: #94a3b8;
-        font-size: 16.5px;
-        font-weight: 500;
-        margin-top: 3px;
-    }
+    .tagline { color: #94a3b8; font-size: 16.5px; font-weight: 500; margin-top: 3px; }
     </style>
 """, unsafe_allow_html=True)
 
-# ====================== HEADER ======================
 st.markdown("""
 <div class="logo-container">
     <div class="logo-icon">⚡</div>
     <div>
         <h1 style="margin:0; padding:0;">Affiliate Leak Protocol Engine Pro</h1>
-        <div class="tagline">Detect. Fix. Monetize. — Ultra-Advanced Link Intelligence System v5.0</div>
+        <div class="tagline">Detect. Fix. Monetize. — Ultra-Advanced Link Intelligence System v5.1</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.write("Deep-scan any blog, Linktree, bio page or content hub. Automatically classify affiliate networks, detect dead links, inventory leaks, and generate precise recovery actions + Auto-Fix suggestions.")
+st.write("Deep-scan any blog, Linktree, bio page or YouTube video. Automatically classifies affiliate networks, detects dead links, inventory leaks, and shows exact source of every link.")
 
 target_url = st.text_input(
-    "🎯 Enter Target URL (Blog / Linktree / Bio / Landing Page):",
-    placeholder="https://yourdomain.com"
+    "🎯 Enter Target URL (Blog / Linktree / Bio / YouTube Video):",
+    placeholder="https://yourdomain.com or https://youtu.be/xxxxx"
 )
 
-# ====================== DATA ======================
 AFFILIATE_MAP = {
     "amazon.": "Amazon Associates", "amzn.to": "Amazon Associates", "amzn.eu": "Amazon Associates",
     "clickbank": "ClickBank", "hop.clickbank": "ClickBank",
-    "shareasale": "ShareASale", "shareasale.com": "ShareASale",
+    "shareasale": "ShareASale",
     "cj.com": "CJ Affiliate", "commission-junction": "CJ Affiliate",
     "impact.com": "Impact", "impactradius": "Impact",
     "rakuten": "Rakuten Advertising", "linksynergy": "Rakuten Advertising",
@@ -151,43 +135,114 @@ OUT_OF_STOCK_SIGNATURES = [
     "item not available", "currently not available", "product has been removed"
 ]
 
-# ====================== CORE FUNCTIONS ======================
-def extract_hyperlinks(url):
+def is_youtube_url(url):
+    return any(x in url.lower() for x in ["youtube.com", "youtu.be"])
+
+def extract_youtube_info(url):
+    """Extract description, channel name and links from YouTube page"""
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
         }
-        response = requests.get(url, headers=headers, timeout=14)
-        if response.status_code != 200:
-            return None, f"HTTP {response.status_code}"
+        resp = requests.get(url, headers=headers, timeout=15)
+        if resp.status_code != 200:
+            return None, None, [], "Failed to fetch YouTube page"
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        base_url = response.url
-        links = set()
+        html = resp.text
+        soup = BeautifulSoup(html, "html.parser")
 
-        for tag in soup.find_all(["a", "link", "area"], href=True):
+        # Channel name
+        channel_name = "Unknown Channel"
+        channel_tag = soup.find("link", {"itemprop": "name"})
+        if channel_tag and channel_tag.get("content"):
+            channel_name = channel_tag["content"]
+        else:
+            # fallback
+            meta = soup.find("meta", {"name": "title"})
+            if meta and meta.get("content"):
+                channel_name = meta["content"].split("-")[-1].strip() if "-" in meta["content"] else meta["content"]
+
+        # Description
+        description = ""
+        desc_tag = soup.find("meta", {"name": "description"})
+        if desc_tag and desc_tag.get("content"):
+            description = desc_tag["content"]
+
+        # Better description from ytInitialData if available
+        match = re.search(r"var ytInitialData = ({.*?});", html)
+        if match:
+            try:
+                data = json.loads(match.group(1))
+                # Try to dig description
+                desc = data.get("contents", {}).get("twoColumnWatchNextResults", {}).get("results", {}).get("results", {}).get("contents", [])
+                for item in desc:
+                    if "videoSecondaryInfoRenderer" in item:
+                        desc_runs = item["videoSecondaryInfoRenderer"].get("description", {}).get("runs", [])
+                        description = " ".join([r.get("text", "") for r in desc_runs])
+                        break
+            except:
+                pass
+
+        # Extract links from description
+        desc_links = set()
+        if description:
+            found = re.findall(r'https?://[^\s<>"\']+', description)
+            for link in found:
+                desc_links.add(link.rstrip(".,)"))
+
+        # All page links
+        all_links = set()
+        for tag in soup.find_all(["a", "link"], href=True):
             href = tag["href"].strip()
-            if not href or href.startswith(("#", "javascript:", "mailto:", "tel:")):
-                continue
-            full_url = urljoin(base_url, href)
-            if full_url.startswith(("http://", "https://")):
-                links.add(full_url.split("#")[0])
+            if href.startswith(("http://", "https://")):
+                all_links.add(href.split("#")[0])
+            elif href.startswith("/"):
+                all_links.add(urljoin("https://www.youtube.com", href).split("#")[0])
 
-        return list(links), None
+        return channel_name, description, list(desc_links), list(all_links)
     except Exception as e:
-        return None, str(e)
+        return None, None, [], str(e)
 
 
-def analyze_link(link_url):
+def extract_hyperlinks(url):
+    if is_youtube_url(url):
+        channel, desc, desc_links, all_links = extract_youtube_info(url)
+        return {
+            "is_youtube": True,
+            "channel": channel,
+            "description": desc,
+            "desc_links": desc_links,
+            "all_links": all_links
+        }, None
+    else:
+        try:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            response = requests.get(url, headers=headers, timeout=14)
+            if response.status_code != 200:
+                return None, f"HTTP {response.status_code}"
+
+            soup = BeautifulSoup(response.text, "html.parser")
+            base_url = response.url
+            links = set()
+            for tag in soup.find_all(["a", "link", "area"], href=True):
+                href = tag["href"].strip()
+                if not href or href.startswith(("#", "javascript:", "mailto:", "tel:")):
+                    continue
+                full_url = urljoin(base_url, href)
+                if full_url.startswith(("http://", "https://")):
+                    links.add(full_url.split("#")[0])
+            return {"is_youtube": False, "all_links": list(links)}, None
+        except Exception as e:
+            return None, str(e)
+
+
+def analyze_link(link_url, source="Page"):
     start = time.time()
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-        }
+        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
         resp = requests.get(link_url, headers=headers, timeout=9, allow_redirects=True)
         elapsed = round(time.time() - start, 2)
         final_url = resp.url
-        status_code = resp.status_code
         text = resp.text.lower()
         title = ""
         try:
@@ -204,114 +259,95 @@ def analyze_link(link_url):
                 detected = name
                 break
 
-        if status_code >= 400:
+        if resp.status_code >= 400:
             return {
-                "url": link_url,
-                "final_url": final_url,
-                "type": "Dead Link",
-                "status": f"🔴 Dead (HTTP {status_code})",
-                "network": detected,
-                "response_time": elapsed,
-                "severity": "Critical"
+                "url": link_url, "final_url": final_url, "type": "Dead Link",
+                "status": f"🔴 Dead (HTTP {resp.status_code})", "network": detected,
+                "source": source, "response_time": elapsed, "severity": "Critical"
             }
 
         combined = text + " " + title
         for sig in OUT_OF_STOCK_SIGNATURES:
             if sig in combined:
                 return {
-                    "url": link_url,
-                    "final_url": final_url,
-                    "type": "Revenue Leak",
-                    "status": "🟡 Out of Stock / Unavailable",
-                    "network": detected,
-                    "response_time": elapsed,
-                    "severity": "High"
+                    "url": link_url, "final_url": final_url, "type": "Revenue Leak",
+                    "status": "🟡 Out of Stock / Unavailable", "network": detected,
+                    "source": source, "response_time": elapsed, "severity": "High"
                 }
 
         if detected != "Standard / Unknown":
             return {
-                "url": link_url,
-                "final_url": final_url,
-                "type": "Safe Affiliate",
-                "status": "🟢 Active & Monetized",
-                "network": detected,
-                "response_time": elapsed,
-                "severity": "Low"
+                "url": link_url, "final_url": final_url, "type": "Safe Affiliate",
+                "status": "🟢 Active & Monetized", "network": detected,
+                "source": source, "response_time": elapsed, "severity": "Low"
             }
 
         return {
-            "url": link_url,
-            "final_url": final_url,
-            "type": "Neutral",
-            "status": "⚪ Standard Link",
-            "network": detected,
-            "response_time": elapsed,
-            "severity": "Low"
+            "url": link_url, "final_url": final_url, "type": "Neutral",
+            "status": "⚪ Standard Link", "network": detected,
+            "source": source, "response_time": elapsed, "severity": "Low"
         }
-
-    except Exception:
+    except:
         return {
-            "url": link_url,
-            "final_url": link_url,
-            "type": "Dead Link",
-            "status": "🔴 Timeout / Connection Failed",
-            "network": "Unknown",
-            "response_time": None,
-            "severity": "Critical"
+            "url": link_url, "final_url": link_url, "type": "Dead Link",
+            "status": "🔴 Timeout / Connection Failed", "network": "Unknown",
+            "source": source, "response_time": None, "severity": "Critical"
         }
 
 
-def calculate_advanced_score(results):
+def calculate_score(results):
     if not results:
         return 0, {}
-
     total = len(results)
     dead = sum(1 for r in results if r["type"] == "Dead Link")
     leaks = sum(1 for r in results if r["type"] == "Revenue Leak")
     safe = sum(1 for r in results if r["type"] == "Safe Affiliate")
     neutral = sum(1 for r in results if r["type"] == "Neutral")
 
-    score = 100
-    score -= dead * 18
-    score -= leaks * 11
-    score -= neutral * 1.5
-
-    if total > 0:
-        safe_ratio = safe / total
-        if safe_ratio >= 0.6:
-            score += 8
-        elif safe_ratio >= 0.4:
-            score += 4
-
+    score = 100 - (dead * 18) - (leaks * 11) - (neutral * 1.5)
+    if total > 0 and (safe / total) >= 0.5:
+        score += 6
     score = max(0, min(100, round(score)))
-
-    breakdown = {
-        "dead": dead,
-        "leaks": leaks,
-        "safe": safe,
-        "neutral": neutral,
-        "total": total
-    }
-    return score, breakdown
+    return score, {"dead": dead, "leaks": leaks, "safe": safe, "neutral": neutral, "total": total}
 
 
-# ====================== MAIN APP ======================
+# ====================== MAIN ======================
 if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
     if not target_url:
-        st.warning("Please enter a valid target URL.")
+        st.warning("Please enter a valid URL.")
     else:
-        with st.spinner("⚡ Running advanced multi-threaded analysis..."):
-            links, error = extract_hyperlinks(target_url)
+        with st.spinner("⚡ Analyzing page + extracting description & links..."):
+            data, error = extract_hyperlinks(target_url)
 
             if error:
-                st.error(f"Failed to fetch page: {error}")
-            elif not links:
-                st.info("No valid hyperlinks found on this page.")
+                st.error(f"Error: {error}")
             else:
+                is_youtube = data.get("is_youtube", False)
+                channel_name = data.get("channel", "Unknown")
+                description = data.get("description", "")
+                desc_links = data.get("desc_links", [])
+                all_links = data.get("all_links", [])
+
+                # Prepare links with source
+                links_with_source = []
+                for link in desc_links:
+                    links_with_source.append((link, "Description"))
+                for link in all_links:
+                    if link not in desc_links:
+                        links_with_source.append((link, "Page / Other"))
+
+                # Remove duplicates while keeping source priority
+                seen = set()
+                unique_links = []
+                for link, source in links_with_source:
+                    if link not in seen:
+                        seen.add(link)
+                        unique_links.append((link, source))
+
                 results = []
-                with ThreadPoolExecutor(max_workers=30) as executor:
-                    future_to_url = {executor.submit(analyze_link, url): url for url in links}
-                    for future in as_completed(future_to_url):
+                with ThreadPoolExecutor(max_workers=25) as executor:
+                    futures = {executor.submit(analyze_link, url, source): (url, source) for url, source in unique_links}
+                    for future in as_completed(futures):
                         results.append(future.result())
 
                 dead_list = [r for r in results if r["type"] == "Dead Link"]
@@ -319,10 +355,23 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                 safe_list = [r for r in results if r["type"] == "Safe Affiliate"]
                 neutral_list = [r for r in results if r["type"] == "Neutral"]
 
-                score, breakdown = calculate_advanced_score(results)
-                networks = Counter([r["network"] for r in results if r["network"] != "Standard / Unknown"])
+                score, breakdown = calculate_score(results)
 
-                # ========== METRICS ==========
+                # ========== NO AFFILIATE FOUND MESSAGE ==========
+                if len(safe_list) == 0:
+                    st.markdown(f"""
+                    <div class="no-affiliate-box">
+                        <h2 style="margin-top:0; color:#fca5a5;">❌ No Affiliate Links Found</h2>
+                        <p style="font-size:18px; margin-bottom:8px;">
+                            <b>{channel_name}</b> ne is page / video ki description mein <b>koi bhi Affiliate Link add nahi ki hai</b>.
+                        </p>
+                        <p style="margin:0; opacity:0.9;">
+                            Sirf normal links (social media, playlist, internal links etc.) mile hain.
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # Metrics
                 st.markdown("---")
                 c1, c2, c3, c4, c5 = st.columns(5)
                 with c1:
@@ -337,12 +386,12 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                     color = "#22c55e" if score >= 75 else "#f59e0b" if score >= 50 else "#ef4444"
                     st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">HEALTH SCORE</h5><h1 style="color:{color};margin:6px 0 0 0;">{score}</h1></div>', unsafe_allow_html=True)
 
-                # ========== TABS ==========
+                # Tabs
                 tab1, tab2, tab3, tab4 = st.tabs([
                     f"🚨 Dead Links ({len(dead_list)})",
                     f"💸 Revenue Leaks ({len(leak_list)})",
                     f"🛡️ Safe Affiliates ({len(safe_list)})",
-                    f"🌐 All Links ({len(results)})"
+                    f"🌐 All Links with Source ({len(results)})"
                 ])
 
                 with tab1:
@@ -353,8 +402,9 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                         <div class="log-card">
                             <b>#{i} • {item['status']}</b><br><br>
                             <b>Original:</b> {item['url']}<br>
-                            <b>Final Destination:</b> {item['final_url']}<br>
-                            <b>Network:</b> {item['network']}
+                            <b>Final:</b> {item['final_url']}<br>
+                            <b>Network:</b> {item['network']}<br>
+                            <b>Source:</b> {item['source']}
                         </div>
                         """, unsafe_allow_html=True)
 
@@ -366,167 +416,63 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                         <div class="log-card">
                             <b>#{i} • {item['status']}</b><br><br>
                             <b>Original:</b> {item['url']}<br>
-                            <b>Final Destination:</b> {item['final_url']}<br>
-                            <b>Network:</b> {item['network']}
+                            <b>Final:</b> {item['final_url']}<br>
+                            <b>Network:</b> {item['network']}<br>
+                            <b>Source:</b> {item['source']}
                         </div>
                         """, unsafe_allow_html=True)
 
                 with tab3:
                     if not safe_list:
-                        st.info("No active affiliate campaigns detected.")
+                        st.info("No active affiliate campaigns found.")
                     for i, item in enumerate(safe_list, 1):
                         st.markdown(f"""
                         <div class="log-card">
                             <b>#{i} • {item['status']}</b><br><br>
                             <b>Original:</b> {item['url']}<br>
-                            <b>Final Destination:</b> {item['final_url']}<br>
-                            <b>Network:</b> {item['network']}
+                            <b>Final:</b> {item['final_url']}<br>
+                            <b>Network:</b> {item['network']}<br>
+                            <b>Source:</b> {item['source']}
                         </div>
                         """, unsafe_allow_html=True)
 
                 with tab4:
+                    st.write("### All Links with Source Information")
                     for i, item in enumerate(results, 1):
-                        st.text(f"[{i}] {item['type']} | {item['network']} → {item['url']}")
+                        st.markdown(f"""
+                        <div class="log-card">
+                            <b>#{i} • {item['type']}</b> | <b>Source: {item['source']}</b><br>
+                            {item['url']}<br>
+                            <small>Network: {item['network']}</small>
+                        </div>
+                        """, unsafe_allow_html=True)
 
-                # ========== SMART RECOMMENDATIONS ==========
+                # Description Preview (for YouTube)
+                if is_youtube and description:
+                    with st.expander("📝 Video Description Preview"):
+                        st.write(description[:1500] + ("..." if len(description) > 1500 else ""))
+
+                # Recommendations + Auto Fix (same as before)
                 st.markdown("---")
-                st.markdown("## 🧠 Ultra Smart Recommendations")
+                st.markdown("## 🧠 Smart Recommendations & Auto-Fix")
 
-                if score >= 80:
-                    status, color = "Excellent", "#22c55e"
-                elif score >= 60:
-                    status, color = "Good", "#3b82f6"
-                elif score >= 40:
-                    status, color = "Needs Attention", "#f59e0b"
-                else:
-                    status, color = "Critical", "#ef4444"
-
-                st.markdown(f"""
-                <div class="recommend-card">
-                    <h4>📊 Advanced Health Score</h4>
-                    <h1 style="color:{color}; margin:6px 0;">{score}/100</h1>
-                    <p style="margin:0; color:#94a3b8;">Status: <b style="color:{color}">{status}</b></p>
-                </div>
-                """, unsafe_allow_html=True)
-
-                if dead_list:
-                    st.markdown(f"""
-                    <div class="recommend-card priority-high">
-                        <h4>🚨 Critical: {len(dead_list)} Dead Links Found</h4>
-                        <p><b>Action Required:</b></p>
-                        <ul>
-                            <li>Remove or replace every dead link immediately.</li>
-                            <li>Broken links hurt SEO, user trust, and conversion rate.</li>
-                            <li>Prioritize high-traffic pages first.</li>
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                if leak_list:
-                    st.markdown(f"""
-                    <div class="recommend-card priority-medium">
-                        <h4>💸 High Priority: {len(leak_list)} Revenue Leaks</h4>
-                        <p><b>Action Required:</b></p>
-                        <ul>
-                            <li>These products are out of stock → zero commission.</li>
-                            <li>Find alternative products in the same niche and update links.</li>
-                            <li>Check Amazon, ClickBank, ShareASale for similar offers.</li>
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                if safe_list:
-                    st.markdown(f"""
-                    <div class="recommend-card priority-low">
-                        <h4>🛡️ {len(safe_list)} Healthy Affiliate Campaigns</h4>
-                        <p><b>Opportunity:</b></p>
-                        <ul>
-                            <li>These links are working and monetized.</li>
-                            <li>Promote them more (social, email, content upgrades).</li>
-                            <li>Create more content around these winning products.</li>
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                # ====================== AUTO-FIX SUGGESTIONS ======================
-                st.markdown("---")
-                st.markdown("## 🔧 Auto-Fix Suggestions")
-                st.caption("Intelligent, prioritized actions you can take right now to recover lost commissions.")
-
-                # 1. Dead Links Auto-Fix
-                if dead_list:
+                if len(safe_list) == 0:
                     st.markdown(f"""
                     <div class="fix-card">
-                        <h4>🚨 Auto-Fix Plan: Dead Links ({len(dead_list)})</h4>
-                        <p><b>Priority:</b> Critical &nbsp;|&nbsp; <b>Impact:</b> High (SEO + Trust + Conversions)</p>
-                        <p><b>Recommended Actions:</b></p>
-                        <ol>
-                            <li>Immediately remove all dead links from your content.</li>
-                            <li>Replace them with currently working alternative products from the same niche.</li>
-                            <li>If no good alternative exists, delete the entire section/paragraph containing the dead link.</li>
-                            <li>Update your sitemap and request re-indexing after fixing (for SEO recovery).</li>
-                        </ol>
-                        <p><b>Quick Search Queries you can use:</b></p>
+                        <h4>💡 Suggestion for {channel_name}</h4>
+                        <p>Is video / page mein koi affiliate link nahi mili.</p>
+                        <p><b>Aap yeh kar sakte ho:</b></p>
                         <ul>
-                            <li>“best alternative to [product name] 2025”</li>
-                            <li>“[product category] best sellers site:amazon.com”</li>
-                            <li>“high converting [niche] offers ClickBank”</li>
+                            <li>Description mein relevant product / tool / course ke affiliate links add karo.</li>
+                            <li>Amazon, ClickBank, or other networks se high converting offers choose karo.</li>
+                            <li>Links ko clearly mention karo (e.g. “Get it here”, “Recommended tool”).</li>
                         </ul>
                     </div>
                     """, unsafe_allow_html=True)
-
-                # 2. Revenue Leaks Auto-Fix
-                if leak_list:
-                    st.markdown(f"""
-                    <div class="fix-card">
-                        <h4>💸 Auto-Fix Plan: Revenue Leaks / Out of Stock ({len(leak_list)})</h4>
-                        <p><b>Priority:</b> High &nbsp;|&nbsp; <b>Impact:</b> Direct Commission Loss</p>
-                        <p><b>Recommended Actions:</b></p>
-                        <ol>
-                            <li>Open each out-of-stock link and note the product category.</li>
-                            <li>Search for similar in-stock products on the same network (Amazon, ClickBank, etc.).</li>
-                            <li>Replace the old affiliate link with the new working one.</li>
-                            <li>Add a small note like “Updated: New Recommended Product” if needed.</li>
-                        </ol>
-                        <p><b>Best Places to Find Replacements:</b></p>
-                        <ul>
-                            <li>Amazon Associates → Search same category + sort by Best Sellers / Featured</li>
-                            <li>ClickBank Marketplace → Filter by Gravity + Category</li>
-                            <li>ShareASale / Impact / Awin → Search similar merchant offers</li>
-                            <li>Google: “best [product type] 2025” + your affiliate network name</li>
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                # 3. General Optimization Auto-Fix
-                st.markdown(f"""
-                <div class="fix-card">
-                    <h4>🛠️ General Auto-Optimization Suggestions</h4>
-                    <p><b>Do these regularly:</b></p>
-                    <ul>
-                        <li>Re-run this tool every <b>10–15 days</b> to catch new dead or out-of-stock links early.</li>
-                        <li>Keep a backup list of 2–3 alternative products for every main offer you promote.</li>
-                        <li>Prefer direct affiliate links instead of multiple shortener redirects when possible.</li>
-                        <li>Focus more traffic on your <b>Safe Affiliate</b> links (they are already converting).</li>
-                        <li>Download the CSV report and maintain a simple change log (Date → Fixed X links).</li>
-                    </ul>
-                </div>
-                """, unsafe_allow_html=True)
-
-                # Network Summary
-                if networks:
-                    st.markdown("### 📡 Detected Affiliate Networks")
-                    net_text = " • ".join([f"{k} ({v})" for k, v in networks.most_common(8)])
-                    st.info(net_text)
 
                 # Download
                 st.markdown("---")
                 st.subheader("📥 Export Full Report")
                 df = pd.DataFrame(results)
                 csv = df.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    "Download Complete Analysis (CSV)",
-                    data=csv,
-                    file_name="affiliate_leak_ultra_report.csv",
-                    mime="text/csv"
-                )
+                st.download_button("Download Complete Analysis (CSV)", data=csv, file_name="affiliate_scan_report.csv", mime="text/csv")
