@@ -349,13 +349,13 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                     st.markdown(f"""
                     <div class="recommend-card priority-high">
                         <h4>🚨 High Priority: Fix Dead Links ({dead_count})</h4>
-                        <p><b>What to do:</b></p>
+                        <p><b>What you should do:</b></p>
                         <ul>
-                            <li>Turant in dead links ko remove ya replace karo. Broken links se user trust aur SEO dono kharab hote hain.</li>
-                            <li>Har dead link ko check karke similar working product/link se replace karo.</li>
-                            <li>Agar koi product permanently unavailable hai to us section ko completely hata do.</li>
+                            <li>Immediately remove or replace all dead links. Broken links damage both user trust and SEO rankings.</li>
+                            <li>Check each dead link and replace it with a similar working product or resource.</li>
+                            <li>If a product is permanently unavailable, completely remove that section from your content.</li>
                         </ul>
-                        <p><b>How to do:</b> Dead Links Network tab se links copy karke apne content mein jaake replace karo.</p>
+                        <p><b>How to do it:</b> Go to the "Dead Links Network" tab, copy the links, and replace them in your content.</p>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -363,13 +363,13 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                     st.markdown(f"""
                     <div class="recommend-card priority-medium">
                         <h4>💸 Medium Priority: Fix Revenue Leaks ({leak_count})</h4>
-                        <p><b>What to do:</b></p>
+                        <p><b>What you should do:</b></p>
                         <ul>
-                            <li>Out of stock products se commission nahi milta. In links ko turant update karo.</li>
-                            <li>Same category ke alternative products dhoondo jo currently available hain.</li>
-                            <li>Amazon/Clickbank etc. mein similar high converting products search karke replace karo.</li>
+                            <li>Out-of-stock products generate zero commission. Update these links as soon as possible.</li>
+                            <li>Find alternative products in the same category that are currently available.</li>
+                            <li>Search for high-converting similar products on Amazon, ClickBank, or other networks and replace the old links.</li>
                         </ul>
-                        <p><b>How to do:</b> Revenue Leakage Core tab se destination links dekho aur naya product link lagao.</p>
+                        <p><b>How to do it:</b> Open the "Revenue Leakage Core" tab, review the destination URLs, and insert new working product links.</p>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -377,11 +377,11 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                     st.markdown(f"""
                     <div class="recommend-card priority-low">
                         <h4>🛡️ Good News: {safe_count} Active Campaigns Working</h4>
-                        <p><b>What to do:</b></p>
+                        <p><b>What you should do:</b></p>
                         <ul>
-                            <li>In working affiliate links ko promote karo (social media, email, more content).</li>
-                            <li>Inhi successful products ke around more content banao.</li>
-                            <li>In links ko apne best performing pages pe highlight karo.</li>
+                            <li>Promote these working affiliate links more aggressively (social media, email, additional content).</li>
+                            <li>Create more content around these successful products.</li>
+                            <li>Highlight these links on your best-performing pages.</li>
                         </ul>
                     </div>
                     """, unsafe_allow_html=True)
@@ -390,11 +390,11 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                     st.markdown("""
                     <div class="recommend-card priority-low">
                         <h4>🎉 Excellent Condition!</h4>
-                        <p>Aapke saare links healthy hain. Ab aap scale kar sakte ho:</p>
+                        <p>All your links are healthy. You can now focus on scaling:</p>
                         <ul>
-                            <li>More content publish karo similar niche mein.</li>
-                            <li>In working links ko different platforms pe promote karo.</li>
-                            <li>New high-commission products add karna shuru karo.</li>
+                            <li>Publish more content in the same niche.</li>
+                            <li>Promote these working links across different platforms.</li>
+                            <li>Start adding new high-commission products.</li>
                         </ul>
                     </div>
                     """, unsafe_allow_html=True)
@@ -404,11 +404,11 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                 <div class="recommend-card">
                     <h4>💡 Pro Tips for Better Results</h4>
                     <ul>
-                        <li>Har 15-20 din baad yeh tool se scan karte raho taaki links fresh rahein.</li>
-                        <li>Dead links se better hai kam links rakhna, lekin saare working hone chahiye.</li>
-                        <li>Amazon links ke liye Amazon Associates se latest product links use karo.</li>
-                        <li>Linktree / Bio pages mein zyada se zyada working affiliate links rakho.</li>
-                        <li>CSV download karke Excel mein analysis kar sakte ho future ke liye.</li>
+                        <li>Run this scan every 15–20 days to keep your links fresh and updated.</li>
+                        <li>It’s better to have fewer links that all work than many broken ones.</li>
+                        <li>For Amazon links, always use the latest product links from Amazon Associates.</li>
+                        <li>On Linktree / Bio pages, prioritize working affiliate links.</li>
+                        <li>Download the CSV report and analyze it in Excel for long-term tracking.</li>
                     </ul>
                 </div>
                 """, unsafe_allow_html=True)
