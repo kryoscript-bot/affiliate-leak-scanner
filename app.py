@@ -54,6 +54,22 @@ st.markdown("""
     .log-card b {
         color: #111827 !important;
     }
+    .recommend-card {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 16px;
+        color: #e2e8f0;
+    }
+    .recommend-card h4 {
+        color: #38bdf8 !important;
+        margin-top: 0;
+        margin-bottom: 12px;
+    }
+    .priority-high { border-left: 5px solid #ef4444; }
+    .priority-medium { border-left: 5px solid #f59e0b; }
+    .priority-low { border-left: 5px solid #22c55e; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -193,6 +209,17 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                 safe_affiliate_list = [item for item in telemetry_outputs if item["type"] == "Safe Affiliate"]
                 neutral_list = [item for item in telemetry_outputs if item["type"] == "Neutral Route"]
 
+                total = len(telemetry_outputs)
+                dead_count = len(dead_links_list)
+                leak_count = len(revenue_leaks_list)
+                safe_count = len(safe_affiliate_list)
+
+                # Health Score Calculation
+                if total > 0:
+                    health_score = max(0, 100 - (dead_count * 15 + leak_count * 10))
+                else:
+                    health_score = 0
+
                 st.markdown("---")
 
                 m_col1, m_col2, m_col3, m_col4 = st.columns(4)
@@ -200,37 +227,37 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                     st.markdown(f'''
                         <div class="metric-container-box">
                             <h5 style="color:#94a3b8;margin:0;">TOTAL SCANNED</h5>
-                            <h1 style="color:#00f2fe !important;margin:5px 0 0 0;">{len(telemetry_outputs)}</h1>
+                            <h1 style="color:#00f2fe !important;margin:5px 0 0 0;">{total}</h1>
                         </div>
                     ''', unsafe_allow_html=True)
                 with m_col2:
                     st.markdown(f'''
                         <div class="metric-container-box">
                             <h5 style="color:#94a3b8;margin:0;">🚨 DEAD LINKS</h5>
-                            <h1 style="color:#ff4b4b !important;margin:5px 0 0 0;">{len(dead_links_list)}</h1>
+                            <h1 style="color:#ff4b4b !important;margin:5px 0 0 0;">{dead_count}</h1>
                         </div>
                     ''', unsafe_allow_html=True)
                 with m_col3:
                     st.markdown(f'''
                         <div class="metric-container-box">
                             <h5 style="color:#94a3b8;margin:0;">💸 REVENUE LEAKS</h5>
-                            <h1 style="color:#ffaa00 !important;margin:5px 0 0 0;">{len(revenue_leaks_list)}</h1>
+                            <h1 style="color:#ffaa00 !important;margin:5px 0 0 0;">{leak_count}</h1>
                         </div>
                     ''', unsafe_allow_html=True)
                 with m_col4:
                     st.markdown(f'''
                         <div class="metric-container-box">
                             <h5 style="color:#94a3b8;margin:0;">🛡️ SAFE CAMPAIGNS</h5>
-                            <h1 style="color:#00cc66 !important;margin:5px 0 0 0;">{len(safe_affiliate_list)}</h1>
+                            <h1 style="color:#00cc66 !important;margin:5px 0 0 0;">{safe_count}</h1>
                         </div>
                     ''', unsafe_allow_html=True)
 
                 st.markdown("<br>", unsafe_allow_html=True)
 
                 tab1, tab2, tab3, tab4 = st.tabs([
-                    f"🚨 Dead Links Network ({len(dead_links_list)})",
-                    f"💸 Revenue Leakage Core ({len(revenue_leaks_list)})",
-                    f"🛡️ Active Campaigns Hub ({len(safe_affiliate_list)})",
+                    f"🚨 Dead Links Network ({dead_count})",
+                    f"💸 Revenue Leakage Core ({leak_count})",
+                    f"🛡️ Active Campaigns Hub ({safe_count})",
                     f"🌐 General Structural Map ({len(neutral_list)})"
                 ])
 
@@ -293,6 +320,100 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                         for idx, item in enumerate(neutral_list, 1):
                             st.text(f"[{idx}] Endpoint Trace Path: {item['url']}")
 
+                # ====================== SMART RECOMMENDATIONS SECTION ======================
+                st.markdown("---")
+                st.markdown("## 🧠 Smart Action Recommendations")
+                st.caption("Based on your scan results, here is exactly what you should do next.")
+
+                # Health Score Display
+                if health_score >= 80:
+                    score_color = "#22c55e"
+                    score_status = "Excellent"
+                elif health_score >= 50:
+                    score_color = "#f59e0b"
+                    score_status = "Needs Attention"
+                else:
+                    score_color = "#ef4444"
+                    score_status = "Critical"
+
+                st.markdown(f"""
+                <div class="recommend-card">
+                    <h4>📊 Overall Link Health Score</h4>
+                    <h1 style="color:{score_color}; margin:8px 0;">{health_score}/100</h1>
+                    <p style="margin:0; color:#94a3b8;">Status: <b style="color:{score_color};">{score_status}</b></p>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Priority Actions
+                if dead_count > 0:
+                    st.markdown(f"""
+                    <div class="recommend-card priority-high">
+                        <h4>🚨 High Priority: Fix Dead Links ({dead_count})</h4>
+                        <p><b>What to do:</b></p>
+                        <ul>
+                            <li>Turant in dead links ko remove ya replace karo. Broken links se user trust aur SEO dono kharab hote hain.</li>
+                            <li>Har dead link ko check karke similar working product/link se replace karo.</li>
+                            <li>Agar koi product permanently unavailable hai to us section ko completely hata do.</li>
+                        </ul>
+                        <p><b>How to do:</b> Dead Links Network tab se links copy karke apne content mein jaake replace karo.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                if leak_count > 0:
+                    st.markdown(f"""
+                    <div class="recommend-card priority-medium">
+                        <h4>💸 Medium Priority: Fix Revenue Leaks ({leak_count})</h4>
+                        <p><b>What to do:</b></p>
+                        <ul>
+                            <li>Out of stock products se commission nahi milta. In links ko turant update karo.</li>
+                            <li>Same category ke alternative products dhoondo jo currently available hain.</li>
+                            <li>Amazon/Clickbank etc. mein similar high converting products search karke replace karo.</li>
+                        </ul>
+                        <p><b>How to do:</b> Revenue Leakage Core tab se destination links dekho aur naya product link lagao.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                if safe_count > 0:
+                    st.markdown(f"""
+                    <div class="recommend-card priority-low">
+                        <h4>🛡️ Good News: {safe_count} Active Campaigns Working</h4>
+                        <p><b>What to do:</b></p>
+                        <ul>
+                            <li>In working affiliate links ko promote karo (social media, email, more content).</li>
+                            <li>Inhi successful products ke around more content banao.</li>
+                            <li>In links ko apne best performing pages pe highlight karo.</li>
+                        </ul>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                if dead_count == 0 and leak_count == 0:
+                    st.markdown("""
+                    <div class="recommend-card priority-low">
+                        <h4>🎉 Excellent Condition!</h4>
+                        <p>Aapke saare links healthy hain. Ab aap scale kar sakte ho:</p>
+                        <ul>
+                            <li>More content publish karo similar niche mein.</li>
+                            <li>In working links ko different platforms pe promote karo.</li>
+                            <li>New high-commission products add karna shuru karo.</li>
+                        </ul>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # Extra Tips
+                st.markdown("""
+                <div class="recommend-card">
+                    <h4>💡 Pro Tips for Better Results</h4>
+                    <ul>
+                        <li>Har 15-20 din baad yeh tool se scan karte raho taaki links fresh rahein.</li>
+                        <li>Dead links se better hai kam links rakhna, lekin saare working hone chahiye.</li>
+                        <li>Amazon links ke liye Amazon Associates se latest product links use karo.</li>
+                        <li>Linktree / Bio pages mein zyada se zyada working affiliate links rakho.</li>
+                        <li>CSV download karke Excel mein analysis kar sakte ho future ke liye.</li>
+                    </ul>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Download Section
                 st.markdown("---")
                 st.subheader("📥 Export Complete Network Matrix Package")
                 df = pd.DataFrame(telemetry_outputs)
