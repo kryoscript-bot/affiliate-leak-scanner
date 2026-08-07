@@ -1,4 +1,5 @@
 
+
 import streamlit as stimport requestsfrom bs4 import BeautifulSoupfrom concurrent.futures import ThreadPoolExecutorimport pandas as pdfrom urllib.parse import urlparse
 # ==============================================================================# 1. ENTERPRISE ENGINE INITIALIZATION & CORE CONFIG# ==============================================================================
 st.set_page_config(
@@ -121,7 +122,7 @@ def trace_single_endpoint_health(link_url):
         if session_instance.status_code >= 400:
             return {
                 "url": link_url, "type": "Dead Link", 
-                "status": f"🔴 Broken Path Framework (HTTP {session_instance.status_code})", 
+                "status": f"Broken Path Framework (HTTP {session_instance.status_code})", 
                 "network": detected_network, "destination": final_destination_route
             }
             
@@ -131,7 +132,7 @@ def trace_single_endpoint_health(link_url):
             if stock_flag in dom_payload:
                 return {
                     "url": link_url, "type": "Revenue Leak", 
-                    "status": "🟡 Critical Revenue Leak: Inventory Empty", 
+                    "status": "Critical Revenue Leak: Inventory Empty", 
                     "network": detected_network, "destination": final_destination_route
                 }
                 
@@ -139,7 +140,7 @@ def trace_single_endpoint_health(link_url):
         if detected_network != "Standard External Endpoint Node":
             return {
                 "url": link_url, "type": "Safe Affiliate", 
-                "status": "🟢 Campaign Verified Active & Monetized", 
+                "status": "Campaign Verified Active & Monetized", 
                 "network": detected_network, "destination": final_destination_route
             }
         else:
@@ -152,7 +153,7 @@ def trace_single_endpoint_health(link_url):
     except Exception:
         return {
             "url": link_url, "type": "Dead Link", 
-            "status": "🔴 Telemetry Timeout / Network Resolution Defect", 
+            "status": "Telemetry Timeout / Network Resolution Defect", 
             "network": "Unknown Network Sector", "destination": link_url
         }
 # ==============================================================================# 4. ENGINE CONTROLLER EXECUTION MATRIX# ==============================================================================if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
@@ -178,7 +179,7 @@ def trace_single_endpoint_health(link_url):
 
 neutral_list = [item for item in telemetry_outputs if item["type"] == "Neutral Route"]
 st.markdown("---")
-# Render Cyber Executive Dashboard Matrix (Fixed Syntax Brackets)
+# Render Cyber Executive Dashboard Matrix
 m_col1, m_col2, m_col3, m_col4 = st.columns(4)
 with m_col1:
 st.markdown(f'TOTAL SCANNED{len(telemetry_outputs)}', unsafe_allow_html=True)
