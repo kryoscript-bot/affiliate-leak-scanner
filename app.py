@@ -42,7 +42,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # App Headers
-st.title("🛡️ Ultra-Advanced Universal Link & Revenue Leak Scanner")
+st.title("🛡️ Universal Link & Revenue Leak Scanner")
 st.subheader("Audit Blogs, Linktree, YouTube Descriptions, Instagram Bios, & Global Affiliate Networks In Real-Time")
 st.write("Enter any public URL below. Our multi-threaded engine will dissect the page, map redirect paths, and audit individual link safety profiles to maximize your monetization.")
 
