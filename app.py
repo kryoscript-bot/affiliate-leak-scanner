@@ -10,7 +10,7 @@ import re
 import json
 
 st.set_page_config(
-    page_title="Affiliate Leak Protocol Engine Pro v5.2",
+    page_title="Affiliate Leak Protocol Engine Pro v5.3",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -88,8 +88,6 @@ st.markdown("""
         filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.5));
     }
     .tagline { color: #94a3b8; font-size: 16.5px; font-weight: 500; margin-top: 3px; }
-
-    /* Transparent Platform Logos */
     .platform-bar {
         display: flex;
         flex-wrap: wrap;
@@ -106,29 +104,32 @@ st.markdown("""
         font-size: 13px;
         font-weight: 500;
         backdrop-filter: blur(6px);
-        transition: all 0.2s ease;
     }
-    .platform-badge:hover {
-        background: rgba(255, 255, 255, 0.12);
-        color: #e2e8f0;
+    .identity-badge {
+        display: inline-block;
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 6px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# ====================== HEADER ======================
 st.markdown("""
 <div class="logo-container">
     <div class="logo-icon">⚡</div>
     <div>
         <h1 style="margin:0; padding:0;">Affiliate Leak Protocol Engine Pro</h1>
-        <div class="tagline">Detect. Fix. Monetize. — Ultra-Advanced Link Intelligence System v5.2</div>
+        <div class="tagline">Detect. Fix. Monetize. — Ultra-Advanced Link Intelligence System v5.3</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.write("Deep-scan blogs, Linktree, bio pages, YouTube, TikTok, Twitter/X and more. Automatically classify affiliate networks, detect dead links & inventory leaks, and show the exact source of every link.")
+st.write("Deep-scan blogs, Linktree, bio pages, YouTube, TikTok, Twitter/X and more. Automatically detect platform + username/ID of every link.")
 
-# Transparent Platform Logos Bar
 st.markdown("""
 <div class="platform-bar">
     <div class="platform-badge">YouTube</div>
@@ -165,11 +166,7 @@ AFFILIATE_MAP = {
     "bit.ly": "Bitly (Shortener)", "tinyurl.com": "TinyURL", "cutt.ly": "Cuttly",
     "linktr.ee": "Linktree", "bio.link": "Bio.link", "shopmy.us": "ShopMy",
     "hotmart": "Hotmart", "digistore24": "Digistore24", "payhip": "Payhip",
-    "gumroad": "Gumroad", "teachable": "Teachable", "kartra": "Kartra",
-    "tiktok.com": "TikTok", "vm.tiktok.com": "TikTok",
-    "twitter.com": "Twitter / X", "x.com": "Twitter / X", "t.co": "Twitter / X",
-    "instagram.com": "Instagram", "facebook.com": "Facebook", "fb.com": "Facebook",
-    "linkedin.com": "LinkedIn"
+    "gumroad": "Gumroad", "teachable": "Teachable", "kartra": "Kartra"
 }
 
 OUT_OF_STOCK_SIGNATURES = [
@@ -180,6 +177,78 @@ OUT_OF_STOCK_SIGNATURES = [
     "sorry, we couldn't find that page", "this product is no longer available",
     "item not available", "currently not available", "product has been removed"
 ]
+
+def extract_platform_identity(url: str) -> dict:
+    """Extract platform and username/ID from URL"""
+    url_lower = url.lower()
+    parsed = urlparse(url)
+    path = parsed.path.strip("/")
+    parts = path.split("/") if path else []
+
+    # YouTube
+    if "youtube.com" in url_lower or "youtu.be" in url_lower:
+        if "/@" in url_lower:
+            username = url_lower.split("/@")[1].split("/")[0].split("?")[0]
+            return {"platform": "YouTube", "username": f"@{username}", "display": f"YouTube • @{username}"}
+        if "/channel/" in url_lower:
+            channel_id = url_lower.split("/channel/")[1].split("/")[0].split("?")[0]
+            return {"platform": "YouTube", "username": channel_id, "display": f"YouTube • {channel_id}"}
+        if "/c/" in url_lower or "/user/" in url_lower:
+            username = parts[1] if len(parts) > 1 else "Unknown"
+            return {"platform": "YouTube", "username": f"@{username}", "display": f"YouTube • @{username}"}
+        return {"platform": "YouTube", "username": "Unknown", "display": "YouTube"}
+
+    # TikTok
+    if "tiktok.com" in url_lower:
+        if "/@" in url_lower:
+            username = url_lower.split("/@")[1].split("/")[0].split("?")[0]
+            return {"platform": "TikTok", "username": f"@{username}", "display": f"TikTok • @{username}"}
+        return {"platform": "TikTok", "username": "Unknown", "display": "TikTok"}
+
+    # Twitter / X
+    if "twitter.com" in url_lower or "x.com" in url_lower or "t.co" in url_lower:
+        if len(parts) >= 1 and parts[0] not in ["i", "intent", "share", "home"]:
+            username = parts[0].split("?")[0]
+            if username:
+                return {"platform": "Twitter / X", "username": f"@{username}", "display": f"Twitter/X • @{username}"}
+        return {"platform": "Twitter / X", "username": "Unknown", "display": "Twitter / X"}
+
+    # Instagram
+    if "instagram.com" in url_lower:
+        if len(parts) >= 1 and parts[0] not in ["p", "reel", "stories", "explore"]:
+            username = parts[0].split("?")[0]
+            return {"platform": "Instagram", "username": f"@{username}", "display": f"Instagram • @{username}"}
+        return {"platform": "Instagram", "username": "Unknown", "display": "Instagram"}
+
+    # Facebook
+    if "facebook.com" in url_lower or "fb.com" in url_lower:
+        if len(parts) >= 1:
+            username = parts[0].split("?")[0]
+            if username and username not in ["profile.php", "pages", "groups"]:
+                return {"platform": "Facebook", "username": username, "display": f"Facebook • {username}"}
+        return {"platform": "Facebook", "username": "Unknown", "display": "Facebook"}
+
+    # Linktree
+    if "linktr.ee" in url_lower:
+        if len(parts) >= 1:
+            username = parts[0].split("?")[0]
+            return {"platform": "Linktree", "username": username, "display": f"Linktree • {username}"}
+        return {"platform": "Linktree", "username": "Unknown", "display": "Linktree"}
+
+    # Bio.link
+    if "bio.link" in url_lower:
+        if len(parts) >= 1:
+            username = parts[0].split("?")[0]
+            return {"platform": "Bio.link", "username": username, "display": f"Bio.link • {username}"}
+
+    # Amazon
+    if "amazon." in url_lower or "amzn.to" in url_lower:
+        return {"platform": "Amazon", "username": "Associates", "display": "Amazon Associates"}
+
+    # Default
+    domain = parsed.netloc.replace("www.", "")
+    return {"platform": domain, "username": "Unknown", "display": domain}
+
 
 def is_youtube_url(url):
     return any(x in url.lower() for x in ["youtube.com", "youtu.be"])
@@ -274,6 +343,8 @@ def extract_hyperlinks(url):
 
 def analyze_link(link_url, source="Page"):
     start = time.time()
+    identity = extract_platform_identity(link_url)
+
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
         resp = requests.get(link_url, headers=headers, timeout=9, allow_redirects=True)
@@ -288,6 +359,11 @@ def analyze_link(link_url, source="Page"):
         except:
             pass
 
+        # Update identity from final URL if better
+        final_identity = extract_platform_identity(final_url)
+        if final_identity["username"] != "Unknown":
+            identity = final_identity
+
         detected = "Standard / Unknown"
         check_str = (link_url + " " + final_url).lower()
         for key, name in AFFILIATE_MAP.items():
@@ -299,7 +375,7 @@ def analyze_link(link_url, source="Page"):
             return {
                 "url": link_url, "final_url": final_url, "type": "Dead Link",
                 "status": f"🔴 Dead (HTTP {resp.status_code})", "network": detected,
-                "source": source, "response_time": elapsed, "severity": "Critical"
+                "source": source, "identity": identity, "response_time": elapsed, "severity": "Critical"
             }
 
         combined = text + " " + title
@@ -308,26 +384,26 @@ def analyze_link(link_url, source="Page"):
                 return {
                     "url": link_url, "final_url": final_url, "type": "Revenue Leak",
                     "status": "🟡 Out of Stock / Unavailable", "network": detected,
-                    "source": source, "response_time": elapsed, "severity": "High"
+                    "source": source, "identity": identity, "response_time": elapsed, "severity": "High"
                 }
 
         if detected != "Standard / Unknown":
             return {
                 "url": link_url, "final_url": final_url, "type": "Safe Affiliate",
                 "status": "🟢 Active & Monetized", "network": detected,
-                "source": source, "response_time": elapsed, "severity": "Low"
+                "source": source, "identity": identity, "response_time": elapsed, "severity": "Low"
             }
 
         return {
             "url": link_url, "final_url": final_url, "type": "Neutral",
             "status": "⚪ Standard Link", "network": detected,
-            "source": source, "response_time": elapsed, "severity": "Low"
+            "source": source, "identity": identity, "response_time": elapsed, "severity": "Low"
         }
     except:
         return {
             "url": link_url, "final_url": link_url, "type": "Dead Link",
             "status": "🔴 Timeout / Connection Failed", "network": "Unknown",
-            "source": source, "response_time": None, "severity": "Critical"
+            "source": source, "identity": identity, "response_time": None, "severity": "Critical"
         }
 
 
@@ -352,7 +428,7 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
     if not target_url:
         st.warning("Please enter a valid URL.")
     else:
-        with st.spinner("⚡ Analyzing page + extracting description & links..."):
+        with st.spinner("⚡ Analyzing page + extracting platform identities..."):
             data, error = extract_hyperlinks(target_url)
 
             if error:
@@ -391,7 +467,6 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
 
                 score, breakdown = calculate_score(results)
 
-                # No Affiliate Message
                 if len(safe_list) == 0:
                     st.markdown(f"""
                     <div class="no-affiliate-box">
@@ -405,7 +480,6 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Metrics
                 st.markdown("---")
                 c1, c2, c3, c4, c5 = st.columns(5)
                 with c1:
@@ -420,72 +494,53 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                     color = "#22c55e" if score >= 75 else "#f59e0b" if score >= 50 else "#ef4444"
                     st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">HEALTH SCORE</h5><h1 style="color:{color};margin:6px 0 0 0;">{score}</h1></div>', unsafe_allow_html=True)
 
-                # Tabs
                 tab1, tab2, tab3, tab4 = st.tabs([
                     f"🚨 Dead Links ({len(dead_list)})",
                     f"💸 Revenue Leaks ({len(leak_list)})",
                     f"🛡️ Safe Affiliates ({len(safe_list)})",
-                    f"🌐 All Links with Source ({len(results)})"
+                    f"🌐 All Links with Identity ({len(results)})"
                 ])
+
+                def render_card(item, idx):
+                    identity_display = item.get("identity", {}).get("display", "Unknown")
+                    st.markdown(f"""
+                    <div class="log-card">
+                        <b>#{idx} • {item['status']}</b><br>
+                        <span class="identity-badge">{identity_display}</span><br><br>
+                        <b>Original:</b> {item['url']}<br>
+                        <b>Final:</b> {item['final_url']}<br>
+                        <b>Network:</b> {item['network']}<br>
+                        <b>Source:</b> {item['source']}
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 with tab1:
                     if not dead_list:
                         st.success("No dead links found.")
                     for i, item in enumerate(dead_list, 1):
-                        st.markdown(f"""
-                        <div class="log-card">
-                            <b>#{i} • {item['status']}</b><br><br>
-                            <b>Original:</b> {item['url']}<br>
-                            <b>Final:</b> {item['final_url']}<br>
-                            <b>Network:</b> {item['network']}<br>
-                            <b>Source:</b> {item['source']}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        render_card(item, i)
 
                 with tab2:
                     if not leak_list:
                         st.success("No revenue leaks detected.")
                     for i, item in enumerate(leak_list, 1):
-                        st.markdown(f"""
-                        <div class="log-card">
-                            <b>#{i} • {item['status']}</b><br><br>
-                            <b>Original:</b> {item['url']}<br>
-                            <b>Final:</b> {item['final_url']}<br>
-                            <b>Network:</b> {item['network']}<br>
-                            <b>Source:</b> {item['source']}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        render_card(item, i)
 
                 with tab3:
                     if not safe_list:
                         st.info("No active affiliate campaigns found.")
                     for i, item in enumerate(safe_list, 1):
-                        st.markdown(f"""
-                        <div class="log-card">
-                            <b>#{i} • {item['status']}</b><br><br>
-                            <b>Original:</b> {item['url']}<br>
-                            <b>Final:</b> {item['final_url']}<br>
-                            <b>Network:</b> {item['network']}<br>
-                            <b>Source:</b> {item['source']}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        render_card(item, i)
 
                 with tab4:
-                    st.write("### All Links with Source Information")
+                    st.write("### All Links with Platform Identity")
                     for i, item in enumerate(results, 1):
-                        st.markdown(f"""
-                        <div class="log-card">
-                            <b>#{i} • {item['type']}</b> | <b>Source: {item['source']}</b><br>
-                            {item['url']}<br>
-                            <small>Network: {item['network']}</small>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        render_card(item, i)
 
                 if is_youtube and description:
                     with st.expander("📝 Video Description Preview"):
                         st.write(description[:1500] + ("..." if len(description) > 1500 else ""))
 
-                # Recommendations
                 st.markdown("---")
                 st.markdown("## 🧠 Smart Recommendations & Auto-Fix")
 
