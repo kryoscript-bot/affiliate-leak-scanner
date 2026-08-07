@@ -70,11 +70,43 @@ st.markdown("""
     .priority-high { border-left: 5px solid #ef4444; }
     .priority-medium { border-left: 5px solid #f59e0b; }
     .priority-low { border-left: 5px solid #22c55e; }
+
+    /* Logo + Header Styling */
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 8px;
+    }
+    .logo-icon {
+        font-size: 52px;
+        background: linear-gradient(135deg, #00f2fe, #4facfe);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.5));
+    }
+    .tagline {
+        color: #94a3b8;
+        font-size: 17px;
+        font-weight: 500;
+        margin-top: 4px;
+        letter-spacing: 0.3px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1>⚡ Affiliate Leak Protocol Engine Pro</h1>", unsafe_allow_html=True)
-st.subheader("Global Enterprise Command Center — Next-Gen Multi-Threaded Structural Telemetry")
+# ====================== LOGO + TAGLINE ======================
+st.markdown("""
+<div class="logo-container">
+    <div class="logo-icon">⚡</div>
+    <div>
+        <h1 style="margin:0; padding:0;">Affiliate Leak Protocol Engine Pro</h1>
+        <div class="tagline">Detect. Fix. Monetize. — Stop losing commissions to dead & out-of-stock links</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.write("")  # small spacing
 st.write("Scan deep directories, landing grids, and dynamic link clouds. This system automatically classifies global affiliate networks, parses response parameters, and isolates active inventory leak vectors.")
 
 target_url = st.text_input(
