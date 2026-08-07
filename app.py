@@ -10,7 +10,7 @@ import re
 import json
 
 st.set_page_config(
-    page_title="Affiliate Leak Protocol Engine Pro v5.1",
+    page_title="Affiliate Leak Protocol Engine Pro v5.2",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -88,24 +88,66 @@ st.markdown("""
         filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.5));
     }
     .tagline { color: #94a3b8; font-size: 16.5px; font-weight: 500; margin-top: 3px; }
+
+    /* Transparent Platform Logos */
+    .platform-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 18px 0 10px 0;
+        opacity: 0.75;
+    }
+    .platform-badge {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #94a3b8;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        backdrop-filter: blur(6px);
+        transition: all 0.2s ease;
+    }
+    .platform-badge:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #e2e8f0;
+    }
     </style>
 """, unsafe_allow_html=True)
 
+# ====================== HEADER ======================
 st.markdown("""
 <div class="logo-container">
     <div class="logo-icon">⚡</div>
     <div>
         <h1 style="margin:0; padding:0;">Affiliate Leak Protocol Engine Pro</h1>
-        <div class="tagline">Detect. Fix. Monetize. — Ultra-Advanced Link Intelligence System v5.1</div>
+        <div class="tagline">Detect. Fix. Monetize. — Ultra-Advanced Link Intelligence System v5.2</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.write("Deep-scan any blog, Linktree, bio page or YouTube video. Automatically classifies affiliate networks, detects dead links, inventory leaks, and shows exact source of every link.")
+st.write("Deep-scan blogs, Linktree, bio pages, YouTube, TikTok, Twitter/X and more. Automatically classify affiliate networks, detect dead links & inventory leaks, and show the exact source of every link.")
+
+# Transparent Platform Logos Bar
+st.markdown("""
+<div class="platform-bar">
+    <div class="platform-badge">YouTube</div>
+    <div class="platform-badge">TikTok</div>
+    <div class="platform-badge">Twitter / X</div>
+    <div class="platform-badge">Instagram</div>
+    <div class="platform-badge">Facebook</div>
+    <div class="platform-badge">Linktree</div>
+    <div class="platform-badge">Amazon</div>
+    <div class="platform-badge">ClickBank</div>
+    <div class="platform-badge">ShareASale</div>
+    <div class="platform-badge">Impact</div>
+    <div class="platform-badge">Awin</div>
+</div>
+""", unsafe_allow_html=True)
 
 target_url = st.text_input(
-    "🎯 Enter Target URL (Blog / Linktree / Bio / YouTube Video):",
-    placeholder="https://yourdomain.com or https://youtu.be/xxxxx"
+    "🎯 Enter Target URL (Blog / Linktree / Bio / YouTube / TikTok / Twitter etc.):",
+    placeholder="https://yourdomain.com or https://youtu.be/xxxxx or https://www.tiktok.com/@user"
 )
 
 AFFILIATE_MAP = {
@@ -123,7 +165,11 @@ AFFILIATE_MAP = {
     "bit.ly": "Bitly (Shortener)", "tinyurl.com": "TinyURL", "cutt.ly": "Cuttly",
     "linktr.ee": "Linktree", "bio.link": "Bio.link", "shopmy.us": "ShopMy",
     "hotmart": "Hotmart", "digistore24": "Digistore24", "payhip": "Payhip",
-    "gumroad": "Gumroad", "teachable": "Teachable", "kartra": "Kartra"
+    "gumroad": "Gumroad", "teachable": "Teachable", "kartra": "Kartra",
+    "tiktok.com": "TikTok", "vm.tiktok.com": "TikTok",
+    "twitter.com": "Twitter / X", "x.com": "Twitter / X", "t.co": "Twitter / X",
+    "instagram.com": "Instagram", "facebook.com": "Facebook", "fb.com": "Facebook",
+    "linkedin.com": "LinkedIn"
 }
 
 OUT_OF_STOCK_SIGNATURES = [
@@ -139,58 +185,48 @@ def is_youtube_url(url):
     return any(x in url.lower() for x in ["youtube.com", "youtu.be"])
 
 def extract_youtube_info(url):
-    """Extract description, channel name and links from YouTube page"""
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-        }
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"}
         resp = requests.get(url, headers=headers, timeout=15)
         if resp.status_code != 200:
-            return None, None, [], "Failed to fetch YouTube page"
+            return None, None, [], "Failed to fetch page"
 
         html = resp.text
         soup = BeautifulSoup(html, "html.parser")
 
-        # Channel name
         channel_name = "Unknown Channel"
         channel_tag = soup.find("link", {"itemprop": "name"})
         if channel_tag and channel_tag.get("content"):
             channel_name = channel_tag["content"]
         else:
-            # fallback
             meta = soup.find("meta", {"name": "title"})
             if meta and meta.get("content"):
                 channel_name = meta["content"].split("-")[-1].strip() if "-" in meta["content"] else meta["content"]
 
-        # Description
         description = ""
         desc_tag = soup.find("meta", {"name": "description"})
         if desc_tag and desc_tag.get("content"):
             description = desc_tag["content"]
 
-        # Better description from ytInitialData if available
         match = re.search(r"var ytInitialData = ({.*?});", html)
         if match:
             try:
                 data = json.loads(match.group(1))
-                # Try to dig description
-                desc = data.get("contents", {}).get("twoColumnWatchNextResults", {}).get("results", {}).get("results", {}).get("contents", [])
-                for item in desc:
+                contents = data.get("contents", {}).get("twoColumnWatchNextResults", {}).get("results", {}).get("results", {}).get("contents", [])
+                for item in contents:
                     if "videoSecondaryInfoRenderer" in item:
-                        desc_runs = item["videoSecondaryInfoRenderer"].get("description", {}).get("runs", [])
-                        description = " ".join([r.get("text", "") for r in desc_runs])
+                        runs = item["videoSecondaryInfoRenderer"].get("description", {}).get("runs", [])
+                        description = " ".join([r.get("text", "") for r in runs])
                         break
             except:
                 pass
 
-        # Extract links from description
         desc_links = set()
         if description:
             found = re.findall(r'https?://[^\s<>"\']+', description)
             for link in found:
                 desc_links.add(link.rstrip(".,)"))
 
-        # All page links
         all_links = set()
         for tag in soup.find_all(["a", "link"], href=True):
             href = tag["href"].strip()
@@ -328,7 +364,6 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                 desc_links = data.get("desc_links", [])
                 all_links = data.get("all_links", [])
 
-                # Prepare links with source
                 links_with_source = []
                 for link in desc_links:
                     links_with_source.append((link, "Description"))
@@ -336,7 +371,6 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                     if link not in desc_links:
                         links_with_source.append((link, "Page / Other"))
 
-                # Remove duplicates while keeping source priority
                 seen = set()
                 unique_links = []
                 for link, source in links_with_source:
@@ -357,16 +391,16 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
 
                 score, breakdown = calculate_score(results)
 
-                # ========== NO AFFILIATE FOUND MESSAGE ==========
+                # No Affiliate Message
                 if len(safe_list) == 0:
                     st.markdown(f"""
                     <div class="no-affiliate-box">
                         <h2 style="margin-top:0; color:#fca5a5;">❌ No Affiliate Links Found</h2>
                         <p style="font-size:18px; margin-bottom:8px;">
-                            <b>{channel_name}</b> ne is page / video ki description mein <b>koi bhi Affiliate Link add nahi ki hai</b>.
+                            <b>{channel_name}</b> has not added any affiliate links in the description or on this page.
                         </p>
                         <p style="margin:0; opacity:0.9;">
-                            Sirf normal links (social media, playlist, internal links etc.) mile hain.
+                            Only standard links (social media, playlists, internal links, etc.) were detected.
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -447,12 +481,11 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                         </div>
                         """, unsafe_allow_html=True)
 
-                # Description Preview (for YouTube)
                 if is_youtube and description:
                     with st.expander("📝 Video Description Preview"):
                         st.write(description[:1500] + ("..." if len(description) > 1500 else ""))
 
-                # Recommendations + Auto Fix (same as before)
+                # Recommendations
                 st.markdown("---")
                 st.markdown("## 🧠 Smart Recommendations & Auto-Fix")
 
@@ -460,17 +493,16 @@ if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
                     st.markdown(f"""
                     <div class="fix-card">
                         <h4>💡 Suggestion for {channel_name}</h4>
-                        <p>Is video / page mein koi affiliate link nahi mili.</p>
-                        <p><b>Aap yeh kar sakte ho:</b></p>
+                        <p>No affiliate links were found on this page.</p>
+                        <p><b>Recommended actions:</b></p>
                         <ul>
-                            <li>Description mein relevant product / tool / course ke affiliate links add karo.</li>
-                            <li>Amazon, ClickBank, or other networks se high converting offers choose karo.</li>
-                            <li>Links ko clearly mention karo (e.g. “Get it here”, “Recommended tool”).</li>
+                            <li>Add relevant product, tool, or course affiliate links in the description.</li>
+                            <li>Choose high-converting offers from Amazon, ClickBank, or other networks.</li>
+                            <li>Clearly label the links (e.g. “Recommended tool”, “Get it here”).</li>
                         </ul>
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Download
                 st.markdown("---")
                 st.subheader("📥 Export Full Report")
                 df = pd.DataFrame(results)
