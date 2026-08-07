@@ -4,8 +4,8 @@ from bs4 import BeautifulSoup
 import re
 from urllib.parse import urlparse
 
-# Ultra-Advanced Page Configuration
-st.set_set_config(
+# Fixed: Corrected st.set_page_config here
+st.set_page_config(
     page_title="Ultra Link Scanner Pro | Global Affiliate Audit Tool", 
     page_icon="🛡️", 
     layout="wide",
