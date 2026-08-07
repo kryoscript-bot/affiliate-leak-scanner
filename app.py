@@ -3,167 +3,176 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor
+import pandas as pd
 
-# Fixed: Corrected st.set_page_config here
+# 2026 Production Grade Page Configuration
 st.set_page_config(
-    page_title="Ultra Link Scanner Pro | Global Affiliate Audit Tool", 
-    page_icon="🛡️", 
+    page_title="Enterprise Link Telemetry Engine", 
+    page_icon="⚡", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Custom Premium Styling
+# Custom High-End Cyber Styling & UI Accents
 st.markdown("""
     <style>
-    .main { background-color: #f8f9fa; }
+    .main { background-color: #0d1117; color: #c9d1d9; }
+    div[data-testid="stMetricValue"] { font-size: 38px !important; font-weight: 800 !important; color: #58a6ff !important; }
     .stButton>button {
-        background: linear-gradient(45deg, #1e3c72 0%, #2a5298 100%);
-        color: white;
-        border-radius: 8px;
-        padding: 12px 24px;
-        font-weight: bold;
-        border: none;
-        width: 100%;
-        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #23a6d5 0%, #23d5ab 100%) !important;
+        color: #ffffff !important;
+        border-radius: 12px !important;
+        padding: 16px 32px !important;
+        font-weight: 800 !important;
+        font-size: 18px !important;
+        letter-spacing: 1px;
+        border: none !important;
+        box-shadow: 0 4px 15px rgba(35, 213, 171, 0.3);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
-    .metric-card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        text-align: center;
-        border-left: 5px solid #1e3c72;
+        transform: scale(1.02) translateY(-3px);
+        box-shadow: 0 8px 25px rgba(35, 213, 171, 0.5);
     }
     </style>
 """, unsafe_allow_html=True)
 
-# App Headers
-st.title("🛡️ Universal Link & Revenue Leak Scanner")
-st.subheader("Audit Blogs, Linktree, YouTube Descriptions, Instagram Bios, & Global Affiliate Networks In Real-Time")
-st.write("Enter any public URL below. Our multi-threaded engine will dissect the page, map redirect paths, and audit individual link safety profiles to maximize your monetization.")
+# Main Dashboard Interface Headers
+st.title("⚡ Enterprise-Grade Link Telemetry & Revenue Leak Scanner")
+st.subheader("Deep Multi-Threaded Structural Analysis for Global Networks, Affiliate Endpoints, and Social Bios")
+st.write("Fueled by high-performance concurrent processing. This system maps nested redirections and identifies active inventory blocks instantly across international frameworks.")
 
-# User Input Field
-target_url = st.text_input("Enter Target URL (Blog Post, Linktree, Social Landing Page, etc.):", placeholder="https://example.com")
+# User Landing Node Sequence Entry
+target_url = st.text_input("Deploy Telemetry Scan Vector (Enter Targeted Domain/Post/Bio URL):", placeholder="https://high-volume-affiliate-portal.com")
 
-# High-Performance Global Footprints & Signatures
+# Highly Updated Digital Signatures & Triggers
 AFFILIATE_SIGNATURES = [
     "amazon.", "amzn.to", "clickbank", "shareasale", "cj.com", "commission-junction",
     "impact.com", "impactradius", "rakuten", "rstyle.me", "rewardstyle", "skimlinks",
     "viglink", "walmart", "ebay.to", "aliexpress", "jdoqoc", "tkqlhce", "anrdoezrs",
     "awin.com", "awin1", "click.linksynergy", "target.com", "shoptstyle", "ltk",
-    "bit.ly", "tinyurl.com", "cutt.ly", "t.co", "rebrand.ly"
+    "bit.ly", "tinyurl.com", "cutt.ly", "t.co", "rebrand.ly", "linktr.ee", "bio.link",
+    "shopmy.us", "knoji", "hotmart", "digistore24", "partnerstack", "refersion"
 ]
 
 OUT_OF_STOCK_SIGNATURES = [
     "currently unavailable", "out of stock", "temporarily unavailable", "page not found",
-    "item unavailable", "sold out", "404", "error-page", "not available", 
-    "product unlisted", "this item is no longer available", "product missing"
+    "item unavailable", "sold out", "404", "error-page", "not available", "404 not found",
+    "product unlisted", "this item is no longer available", "product missing", "product unavailable",
+    "oops!", "sorry, the page you requested", "product no longer exists", "stock empty"
 ]
 
-def analyze_page_links(url):
+def extract_hyperlinks_async(url):
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept-Language": "en-US,en;q=0.9"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
         }
-        response = requests.get(url, headers=headers, timeout=12)
+        response = requests.get(url, headers=headers, timeout=15)
         if response.status_code != 200:
-            return None, f"Network Access Denied (HTTP Status Code: {response.status_code})"
+            return None, f"Network Access Blocked (HTTP Refusal Code: {response.status_code})"
         
         soup = BeautifulSoup(response.text, 'html.parser')
-        extracted_links = set()
+        discovered_nodes = set()
         
-        # Scrape all anchors
-        for anchor in soup.find_all('a', href=True):
-            raw_href = anchor['href'].strip()
-            if raw_href.startswith(('http://', 'https://')):
-                extracted_links.add(raw_href)
+        # Standard and Advanced Script-Level Fallback Extraction
+        for element in soup.find_all(['a', 'link', 'area'], href=True):
+            cleaned_node = element['href'].strip()
+            if cleaned_node.startswith(('http://', 'https://')):
+                discovered_nodes.add(cleaned_node)
                 
-        return list(extracted_links), None
-    except Exception as error_msg:
-        return None, str(error_msg)
+        # Data-attribute deep parsing logic for reactive UI networks
+        for custom_element in soup.find_all(attrs={"data-href": True}):
+            cleaned_node = custom_element['data-href'].strip()
+            if cleaned_node.startswith(('http://', 'https://')):
+                discovered_nodes.add(cleaned_node)
+                
+        return list(discovered_nodes), None
+    except Exception as network_fault:
+        return None, str(network_fault)
 
-def audit_link_health(link_url):
+def trace_single_endpoint_health(link_url):
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         }
-        # Follow redirects fully to analyze destination health
-        session_response = requests.get(link_url, headers=headers, timeout=10, allow_redirects=True)
-        final_destination = session_response.url
+        # Threaded validation mapping with automatic system loop tracking
+        session_instance = requests.get(link_url, headers=headers, timeout=8, allow_redirects=True)
+        final_destination_route = session_instance.url
         
-        # 1. Structural Validation Code
-        if session_response.status_code >= 400:
-            return "❌ Dead Link / Broken Resource", f"HTTP {session_response.status_code}", final_destination
+        if session_instance.status_code >= 400:
+            return {"url": link_url, "status": "❌ Broken Connection", "cause": f"HTTP {session_instance.status_code}", "destination": final_destination_route}
             
-        # 2. Advanced E-commerce Payload Analysis
-        dom_payload = session_response.text.lower()
-        for flag in OUT_OF_STOCK_SIGNATURES:
-            if flag in dom_payload:
-                return "⚠️ Revenue Leak: Item Out-of-Stock / Unlisted", "Inventory Issue", final_destination
+        page_payload = session_instance.text.lower()
+        for stock_flag in OUT_OF_STOCK_SIGNATURES:
+            if stock_flag in page_payload:
+                return {"url": link_url, "status": "⚠️ Monetization Leak", "cause": "Inventory Out-of-Stock", "destination": final_destination_route}
                 
-        # 3. Classify Link Profiles
-        is_monetized = any(sig in link_url.lower() or sig in final_destination.lower() for sig in AFFILIATE_SIGNATURES)
-        if is_monetized:
-            return "✅ Active & Properly Monetized", "Affiliate Active", final_destination
+        monetization_vector = any(sig in link_url.lower() or sig in final_destination_route.lower() for sig in AFFILIATE_SIGNATURES)
+        if monetization_vector:
+            return {"url": link_url, "status": "✅ Optimized Affiliate", "cause": "Monetized Route Operational", "destination": final_destination_route}
         else:
-            return "ℹ️ Neutral External / Social Track", "Standard Route", final_destination
+            return {"url": link_url, "status": "ℹ️ Standard Traversal", "cause": "Clean Unmonetized Path", "destination": final_destination_route}
             
     except requests.exceptions.Timeout:
-        return "⏱️ Latency Timeout / Network Blocked", "Unresponsive", link_url
+        return {"url": link_url, "status": "⏱️ Latency Breach", "cause": "Timeout (>8s)", "destination": link_url}
     except Exception:
-        return "❓ Unverifiable / Restricted Sandbox", "Handshake Error", link_url
+        return {"url": link_url, "status": "❓ Shielded Ecosystem", "cause": "Restricted Access Path", "destination": link_url}
 
-# Execution Architecture
-if st.button("Initialize Deep Scan Engine"):
+# Parallel Processing Concurrency Management Matrix
+if st.button("Trigger High-Velocity Diagnostic Optimization"):
     if not target_url:
-        st.warning("Action Required: Please supply a secure target URL sequence to run telemetry.")
+        st.warning("Action Deferred: Paste an endpoint coordinate to spin up background parallel execution threads.")
     else:
-        with st.spinner("Processing deep page architecture and structural verification routines..."):
-            all_links, failure_signal = analyze_page_links(target_url)
+        with st.spinner("Spawning synchronous multi-threaded worker pools... Processing asset tree structure."):
+            extracted_node_list, critical_signal = extract_hyperlinks_async(target_url)
             
-            if failure_signal:
-                st.error(f"Critical Engine Interruption: {failure_signal}")
-            elif not all_links:
-                st.info("System Notification: No external or structured hyperlinks detected on target landing coordinate.")
+            if critical_signal:
+                st.error(f"Execution Interrupted: {critical_signal}")
+            elif not extracted_node_list:
+                st.info("Telemetry Empty: Zero active hypermedia tags extracted from the source DOM payload.")
             else:
-                # Initialization Vectors for Metrics
-                good_links = 0
-                leaks = 0
-                dead_links = 0
+                # Concurrent Thread Distribution Pipeline (Max 25 Workers in Parallel)
+                with ThreadPoolExecutor(max_workers=25) as execution_pool:
+                    telemetry_outputs = list(execution_pool.map(trace_single_endpoint_health, extracted_node_list))
                 
-                # Visual Dividers & Placeholders
+                # Metric Processing & Analysis Mapping
+                total_audited = len(telemetry_outputs)
+                functional_nodes = sum(1 for item in telemetry_outputs if "✅" in item["status"])
+                leak_nodes = sum(1 for item in telemetry_outputs if "⚠️" in item["status"])
+                broken_nodes = sum(1 for item in telemetry_outputs if "❌" in item["status"] or "⏱️" in item["status"])
+                
                 st.markdown("---")
-                st.subheader("📊 Live Telemetry Dashboard Metrics")
+                st.subheader("📊 Network Performance Diagnostic Dashboard")
                 
-                metrics_container = st.empty()
-                results_container = st.container()
+                # Visual Metric Grid Generation
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("Hyperlinks Mapped", total_audited)
+                col2.metric("Active Campaigns", functional_nodes)
+                col3.metric("Identified Revenue Leaks", leak_nodes)
+                col4.metric("Dead Drop Elements", broken_nodes)
                 
-                with results_container:
-                    st.write("#### Detailed Individual Link Audit Logs:")
-                    
-                    for index, active_link in enumerate(all_links, 1):
-                        status_label, cause, resolved_destination = audit_link_health(active_link)
-                        
-                        # Increment Dashboard State Indicators
-                        if "✅" in status_label:
-                            good_links += 1
-                            st.success(f"**Track #{index}:** {active_link} \n* Destination: `{resolved_destination}` \n* Status: **{status_label}** ({cause})")
-                        elif "⚠️" in status_label:
-                            leaks += 1
-                            st.warning(f"**Track #{index}:** {active_link} \n* Destination: `{resolved_destination}` \n* Status: **{status_label}** ({cause})")
-                        else:
-                            dead_links += 1
-                            st.error(f"**Track #{index}:** {active_link} \n* Status: **{status_label}** ({cause})")
+                st.markdown("### 📋 Structured Performance Manifest Log")
                 
-                # Render Real-Time Dashboard Analytics Grid
-                with metrics_container:
-                    col1, col2, col3, col4 = st.columns(4)
-                    col1.metric(label="Total Audited Links", value=len(all_links))
-                    col2.metric(label="Monetized & Functional", value=good_links)
-                    col3.metric(label="Inventory/Stock Leaks", value=leaks)
-                    col4.metric(label="Broken/Dead Connections", value=dead_links)
+                # Structured Layout Presentation
+                for track_idx, log in enumerate(telemetry_outputs, 1):
+                    if "✅" in log["status"]:
+                        st.success(f"**[{track_idx}] {log['status']}** \n* Source Vector: {log['url']} \n* Verified Target: `{log['destination']}` \n* Diagnostic Flag: {log['cause']}")
+                    elif "⚠️" in log["status"]:
+                        st.warning(f"**[{track_idx}] {log['status']}** \n* Source Vector: {log['url']} \n* Verified Target: `{log['destination']}` \n* Diagnostic Flag: {log['cause']}")
+                    else:
+                        st.error(f"**[{track_idx}] {log['status']}** \n* Source Vector: {log['url']} \n* Diagnostic Flag: {log['cause']}")
+                
+                # Premium Data Operational Feature: Direct Export Engine
+                st.markdown("---")
+                st.subheader("📥 Export Enterprise Telemetry Package")
+                data_frame_manifest = pd.DataFrame(telemetry_outputs)
+                csv_payload = data_frame_manifest.to_csv(index=False).encode('utf-8')
+                
+                st.download_button(
+                    label="Download Full Link Intelligence Sheet (.CSV)",
+                    data=csv_payload,
+                    file_name="link_telemetry_audit_report.csv",
+                    mime="text/csv"
+                )
