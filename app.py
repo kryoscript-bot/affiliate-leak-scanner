@@ -1,317 +1,317 @@
 import streamlit as st
 import requests
-import re
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse, unquote
-from collections import OrderedDict
-from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import pandas as pd
+from urllib.parse import urlparse, urljoin
+import re
 import json
 
-# ============================================================
-#          STRONG LINK + USERNAME EXTRACTION ALGORITHM
-# ============================================================
-
-def is_valid_url(url: str) -> bool:
-    try:
-        result = urlparse(url)
-        return all([result.scheme in ("http", "https"), result.netloc])
-    except:
-        return False
-
-
-def clean_url(url: str) -> str:
-    tracking = {
-        "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
-        "fbclid", "gclid", "ref", "source", "mc_cid", "mc_eid", "igshid"
-    }
-    try:
-        parsed = urlparse(url)
-        if parsed.query:
-            params = []
-            for p in parsed.query.split("&"):
-                key = p.split("=")[0].lower()
-                if key not in tracking:
-                    params.append(p)
-            clean_q = "&".join(params)
-            url = parsed._replace(query=clean_q).geturl()
-        if url.endswith("/") and parsed.path not in ("", "/"):
-            url = url.rstrip("/")
-        return url
-    except:
-        return url
-
-
-def extract_username_from_url(url: str):
-    try:
-        parsed = urlparse(url)
-        domain = parsed.netloc.lower().replace("www.", "")
-        path = unquote(parsed.path).strip("/")
-        if not path:
-            return None
-        parts = path.split("/")
-
-        if domain in ("x.com", "twitter.com"):
-            if parts and parts[0] not in ("i", "intent", "share", "search", "hashtag", "explore", "settings"):
-                return parts[0]
-
-        if domain in ("instagram.com", "www.instagram.com"):
-            if parts and parts[0] not in ("p", "reel", "reels", "stories", "explore", "accounts", "direct"):
-                return parts[0]
-
-        if domain in ("youtube.com", "www.youtube.com", "m.youtube.com"):
-            if parts:
-                if parts[0] in ("c", "user", "channel"):
-                    return parts[1] if len(parts) > 1 else None
-                if parts[0].startswith("@"):
-                    return parts[0][1:]
-                return parts[0]
-
-        if domain == "github.com":
-            if parts and parts[0] not in ("features", "topics", "collections", "trending", "events", "marketplace", "pricing", "login", "join"):
-                return parts[0]
-
-        if "linkedin.com" in domain:
-            if len(parts) >= 2 and parts[0] == "in":
-                return parts[1]
-            if len(parts) >= 2 and parts[0] == "company":
-                return parts[1]
-
-        if domain in ("tiktok.com", "www.tiktok.com"):
-            if parts and parts[0].startswith("@"):
-                return parts[0][1:]
-            if parts:
-                return parts[0]
-
-        if domain in ("t.me", "telegram.me"):
-            if parts:
-                return parts[0]
-
-        if parts and re.match(r'^[a-zA-Z0-9._]{2,30}$', parts[0]):
-            return parts[0]
-    except:
-        pass
-    return None
-
-
-def extract_usernames_from_text(text: str) -> list:
-    pattern = re.compile(r'(?<!\w)@([a-zA-Z0-9_]{2,30})\b')
-    return list(OrderedDict.fromkeys(pattern.findall(text)))
-
-
-def extract_links_from_text(text: str) -> list:
-    url_pattern = re.compile(
-        r'https?://[^\s<>"\'\)\]]+|'
-        r'www\.[^\s<>"\'\)\]]+',
-        re.IGNORECASE
-    )
-    found = url_pattern.findall(text)
-    results = []
-    seen = set()
-
-    for raw in found:
-        link = raw
-        if link.lower().startswith("www."):
-            link = "https://" + link
-        link = link.rstrip(".,;:!?)]}")
-        link = clean_url(link)
-
-        if not is_valid_url(link) or link in seen:
-            continue
-        seen.add(link)
-
-        username = extract_username_from_url(link)
-        results.append({
-            "url": link,
-            "username": username,
-            "domain": urlparse(link).netloc.replace("www.", ""),
-            "title": username or link,
-            "source": "pasted text"
-        })
-
-    pure_usernames = extract_usernames_from_text(text)
-    for uname in pure_usernames:
-        if any(r.get("username") == uname for r in results):
-            continue
-        results.append({
-            "url": None,
-            "username": uname,
-            "domain": None,
-            "title": f"@{uname}",
-            "source": "pasted text"
-        })
-    return results
-
-
-def extract_links_from_url(page_url: str, timeout: int = 12) -> dict:
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
-    }
-    try:
-        resp = requests.get(page_url, headers=headers, timeout=timeout, allow_redirects=True)
-        resp.raise_for_status()
-        final_url = resp.url
-        soup = BeautifulSoup(resp.content, "lxml")
-        page_title = soup.title.string.strip() if soup.title and soup.title.string else ""
-
-        results = []
-        seen = set()
-
-        for a in soup.find_all("a", href=True):
-            href = a.get("href", "").strip()
-            if not href or href.startswith(("#", "javascript:", "mailto:", "tel:")):
-                continue
-
-            absolute = urljoin(final_url, href)
-            absolute = clean_url(absolute)
-
-            if not is_valid_url(absolute) or absolute in seen:
-                continue
-            seen.add(absolute)
-
-            anchor_text = a.get_text(strip=True)[:100]
-            username = extract_username_from_url(absolute)
-            title = username or anchor_text or absolute
-
-            results.append({
-                "url": absolute,
-                "username": username,
-                "domain": urlparse(absolute).netloc.replace("www.", ""),
-                "title": title,
-                "source": final_url
-            })
-
-        return {
-            "success": True,
-            "page_title": page_title,
-            "page_url": final_url,
-            "total": len(results),
-            "links": results
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e), "links": []}
-
-
-# ============================================================
-#                      STREAMLIT UI
-# ============================================================
-
-st.set_page_config(
-    page_title="LinkVault — Link + Username Extractor",
-    page_icon="🔗",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Affiliate Leak Protocol Engine Pro v5.7", page_icon="⚡", layout="wide")
 
 st.markdown("""
 <style>
-    .main-header { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.2rem; }
-    .sub-header { color: #64748b; font-size: 1rem; margin-bottom: 1.5rem; }
-    .username-badge {
-        background: #e0e7ff; color: #3730a3;
-        padding: 3px 10px; border-radius: 20px;
-        font-size: 0.85rem; font-weight: 600;
-    }
+.main { background-color: #0b0f19 !important; color: #cbd5e1 !important; }
+h1 { color: #00f2fe !important; font-weight: 800 !important; }
+.metric-container-box {
+    background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+    padding: 22px; border-radius: 16px; text-align: center; margin-bottom: 15px;
+}
+.stButton>button {
+    background: linear-gradient(90deg, #00f2fe 0%, #4facfe 100%) !important;
+    color: #0b0f19 !important; border-radius: 12px !important; padding: 16px 36px !important;
+    font-weight: 800 !important; font-size: 18px !important; border: none !important; width: 100%;
+}
+.log-card {
+    background: #ffffff !important; color: #1f2937 !important; padding: 18px 20px;
+    border-radius: 12px; margin-bottom: 12px; border: 1px solid #e5e7eb;
+}
+.no-affiliate-box {
+    background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);
+    border: 1px solid #ef4444; border-radius: 14px; padding: 24px;
+    margin-bottom: 20px; color: #fecaca; text-align: center;
+}
+.identity-badge {
+    display: inline-block; background: #e0f2fe; color: #0369a1;
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-top: 6px;
+}
+.platform-bar { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; opacity: 0.8; }
+.platform-badge {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+    color: #94a3b8; padding: 6px 14px; border-radius: 20px; font-size: 13px;
+}
+.fix-card {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    border: 1px solid #4f46e5; border-radius: 14px; padding: 20px; margin-bottom: 14px; color: #e0e7ff;
+}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header">🔗 LinkVault</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Smart Link + Username Extractor</div>', unsafe_allow_html=True)
+st.markdown("""
+<div style="display:flex; align-items:center; gap:16px; margin-bottom:8px;">
+    <div style="font-size:52px; background:linear-gradient(135deg,#00f2fe,#4facfe); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⚡</div>
+    <div>
+        <h1 style="margin:0;">Affiliate Leak Protocol Engine Pro</h1>
+        <div style="color:#94a3b8; font-size:16px;">Detect. Fix. Monetize. — v5.7 (Fixed Link Extraction)</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-with st.sidebar:
-    st.header("⚙️ Settings")
-    mode = st.radio("Extraction Mode", ["From Text", "From Website URL"], index=0)
-    st.markdown("---")
-    st.markdown("### Features")
-    st.markdown("""
-    - Full clean links  
-    - Username detection  
-    - X, Instagram, GitHub, YouTube, TikTok, LinkedIn, Telegram  
-    - Tracking parameters remove  
-    - Search & Export
-    """)
+st.write("Deep scan blogs, Linktree, YouTube, TikTok, Twitter/X, Instagram & more.")
 
-if mode == "From Text":
-    text_input = st.text_area(
-        "Paste text containing links or @usernames",
-        height=180,
-        placeholder="Example:\nhttps://x.com/elonmusk\n@nasa\nhttps://instagram.com/natgeo\nwww.github.com/torvalds"
-    )
-    extract_btn = st.button("🚀 Extract Links + Usernames", type="primary", use_container_width=True)
+st.markdown("""
+<div class="platform-bar">
+    <div class="platform-badge">YouTube</div>
+    <div class="platform-badge">TikTok</div>
+    <div class="platform-badge">Twitter / X</div>
+    <div class="platform-badge">Instagram</div>
+    <div class="platform-badge">Linktree</div>
+    <div class="platform-badge">Amazon</div>
+    <div class="platform-badge">ClickBank</div>
+</div>
+""", unsafe_allow_html=True)
 
-    if extract_btn:
-        if not text_input.strip():
-            st.warning("Please paste some text first.")
-        else:
-            with st.spinner("Extracting..."):
-                results = extract_links_from_text(text_input)
-                st.session_state["results"] = results
-                st.session_state["source"] = "Extracted from text"
+target_url = st.text_input("🎯 Enter Target URL", placeholder="https://youtu.be/xxxxx")
 
-else:
-    url_input = st.text_input("Enter Website URL", placeholder="https://example.com/page")
-    extract_btn = st.button("🚀 Extract Links + Usernames", type="primary", use_container_width=True)
+AFFILIATE_MAP = {
+    "amazon.": "Amazon Associates", "amzn.to": "Amazon Associates",
+    "clickbank": "ClickBank", "hop.clickbank": "ClickBank",
+    "shareasale": "ShareASale", "cj.com": "CJ Affiliate",
+    "impact.com": "Impact", "rstyle.me": "LTK",
+    "skimlinks": "Skimlinks", "awin.": "Awin",
+    "bit.ly": "Bitly", "linktr.ee": "Linktree", "bio.link": "Bio.link",
+    "hotmart": "Hotmart", "digistore24": "Digistore24", "gumroad": "Gumroad"
+}
 
-    if extract_btn:
-        if not url_input.strip():
-            st.warning("Please enter a URL.")
-        else:
-            with st.spinner("Fetching page and extracting..."):
-                result = extract_links_from_url(url_input.strip())
-                if result["success"]:
-                    st.session_state["results"] = result["links"]
-                    st.session_state["source"] = result.get("page_title") or result.get("page_url")
-                else:
-                    st.error(f"Error: {result.get('error', 'Unknown error')}")
-                    st.session_state["results"] = []
+OUT_OF_STOCK = [
+    "currently unavailable", "out of stock", "temporarily unavailable",
+    "item unavailable", "sold out", "product unlisted", "product unavailable",
+    "this item is no longer available", "product missing"
+]
 
-if "results" in st.session_state and st.session_state["results"]:
-    results = st.session_state["results"]
+JUNK = ["i.ytimg.com", "yt3.ggpht.com", "ytimg.com", "ggpht.com", "googleusercontent.com"]
 
-    st.markdown("---")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Found", len(results))
-    with col2:
-        st.metric("With Username", sum(1 for r in results if r.get("username")))
-    with col3:
-        st.metric("Full Links", sum(1 for r in results if r.get("url")))
+def is_junk(url):
+    u = url.lower()
+    return any(j in u for j in JUNK) or u.endswith((".jpg", ".png", ".webp", ".gif", ".css", ".js"))
 
-    search = st.text_input("🔍 Search results", placeholder="Search by username, domain or link...")
+def extract_identity(url):
+    if not url: return {"display": "Unknown"}
+    u = url.lower()
+    parts = [p for p in urlparse(url).path.strip("/").split("/") if p]
 
-    filtered = results
-    if search.strip():
-        q = search.lower()
-        filtered = [
-            r for r in results
-            if q in (r.get("username") or "").lower()
-            or q in (r.get("url") or "").lower()
-            or q in (r.get("domain") or "").lower()
-            or q in (r.get("title") or "").lower()
-        ]
+    if "youtube.com" in u or "youtu.be" in u:
+        if "/@" in u:
+            user = u.split("/@")[1].split("/")[0].split("?")[0]
+            return {"display": f"YouTube • @{user}"}
+        if "/channel/" in u:
+            return {"display": f"YouTube • {u.split('/channel/')[1].split('/')[0]}"}
+        return {"display": "YouTube"}
+    if "tiktok.com" in u and "/@" in u:
+        user = u.split("/@")[1].split("/")[0].split("?")[0]
+        return {"display": f"TikTok • @{user}"}
+    if ("twitter.com" in u or "x.com" in u) and parts:
+        return {"display": f"Twitter/X • @{parts[0]}"}
+    if "instagram.com" in u and parts and parts[0] not in ["p", "reel"]:
+        return {"display": f"Instagram • @{parts[0]}"}
+    if "linktr.ee" in u and parts:
+        return {"display": f"Linktree • {parts[0]}"}
+    if "amazon." in u or "amzn.to" in u:
+        return {"display": "Amazon Associates"}
+    return {"display": urlparse(url).netloc.replace("www.", "")}
 
-    st.write(f"Showing **{len(filtered)}** results")
+def get_youtube_data(url):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"}
+        r = requests.get(url, headers=headers, timeout=15)
+        html = r.text
+        soup = BeautifulSoup(html, "html.parser")
 
-    for item in filtered:
-        with st.container():
-            if item.get("username"):
-                st.markdown(f'<span class="username-badge">@{item["username"]}</span>', unsafe_allow_html=True)
-            if item.get("url"):
-                st.markdown(f"🔗 [{item['url']}]({item['url']})")
+        # Channel Name
+        channel = "Unknown Channel"
+        for pat in [r'"ownerChannelName":"([^"]+)"', r'"channelName":"([^"]+)"', r'"author":"([^"]+)"']:
+            m = re.search(pat, html)
+            if m and len(m.group(1)) > 2:
+                channel = m.group(1)
+                break
+        if channel == "Unknown Channel":
+            t = soup.find("title")
+            if t: channel = t.text.replace(" - YouTube", "").strip()
+
+        # Description
+        desc = ""
+        meta = soup.find("meta", {"name": "description"})
+        if meta: desc = meta.get("content", "")
+
+        m = re.search(r"ytInitialData\s*=\s*({.+?});", html)
+        if m:
+            try:
+                data = json.loads(m.group(1))
+                contents = data.get("contents", {}).get("twoColumnWatchNextResults", {}).get("results", {}).get("results", {}).get("contents", [])
+                for item in contents:
+                    if "videoSecondaryInfoRenderer" in item:
+                        runs = item["videoSecondaryInfoRenderer"].get("description", {}).get("runs", [])
+                        desc = " ".join([x.get("text", "") for x in runs])
+                        break
+            except: pass
+
+        # Links from description
+        desc_links = re.findall(r'https?://[^\s<>"\']+', desc or "")
+        desc_links = [l.rstrip(".,)") for l in desc_links]
+
+        # Also get some page links (important ones only)
+        page_links = []
+        for a in soup.find_all("a", href=True):
+            href = a["href"].strip()
+            if href.startswith("http"):
+                full = href.split("#")[0]
+            elif href.startswith("/"):
+                full = urljoin("https://www.youtube.com", href).split("#")[0]
             else:
-                st.caption("No full link available")
-            if item.get("domain"):
-                st.caption(f"Domain: {item['domain']}")
-            st.markdown("---")
+                continue
+            if not is_junk(full) and "youtube.com/watch" not in full and "youtube.com/shorts" not in full:
+                page_links.append(full)
 
-    st.markdown("### Export")
-    export_data = json.dumps(results, indent=2, ensure_ascii=False)
-    st.download_button(
-        label="📥 Download JSON",
-        data=export_data,
-        file_name=f"linkvault_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-        mime="application/json",
-        use_container_width=True
-    )
-else:
-    st.info("👆 Choose a mode, enter text or URL, and click Extract to get started.")
+        return channel, desc, desc_links, list(set(page_links))[:15]  # limit page links
+    except:
+        return "Unknown Channel", "", [], []
+
+def analyze(url, source):
+    if is_junk(url): return None
+    identity = extract_identity(url)
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+        r = requests.get(url, headers=headers, timeout=8, allow_redirects=True)
+        final = r.url
+        identity = extract_identity(final) if extract_identity(final)["display"] != "Unknown" else identity
+
+        network = "Standard / Unknown"
+        check = (url + " " + final).lower()
+        for k, v in AFFILIATE_MAP.items():
+            if k in check:
+                network = v
+                break
+
+        if r.status_code >= 400:
+            return {"url": url, "final_url": final, "type": "Dead Link", "status": f"🔴 Dead ({r.status_code})", "network": network, "source": source, "identity": identity}
+
+        text = r.text.lower()[:25000]
+        for sig in OUT_OF_STOCK:
+            if sig in text:
+                return {"url": url, "final_url": final, "type": "Revenue Leak", "status": "🟡 Out of Stock", "network": network, "source": source, "identity": identity}
+
+        if network != "Standard / Unknown":
+            return {"url": url, "final_url": final, "type": "Safe Affiliate", "status": "🟢 Active", "network": network, "source": source, "identity": identity}
+
+        return {"url": url, "final_url": final, "type": "Neutral", "status": "⚪ Standard", "network": network, "source": source, "identity": identity}
+    except:
+        return {"url": url, "final_url": url, "type": "Dead Link", "status": "🔴 Failed", "network": "Unknown", "source": source, "identity": identity}
+
+if st.button("🚀 LAUNCH ULTRA AUDIT ENGINE"):
+    if not target_url:
+        st.warning("Please enter a URL")
+    else:
+        with st.spinner("⚡ Analyzing..."):
+            is_yt = any(x in target_url.lower() for x in ["youtube.com", "youtu.be"])
+            
+            if is_yt:
+                channel, desc, desc_links, page_links = get_youtube_data(target_url)
+                links = [(l, "Description") for l in desc_links] + [(l, "Page") for l in page_links]
+            else:
+                channel = "Unknown"
+                desc = ""
+                try:
+                    headers = {"User-Agent": "Mozilla/5.0"}
+                    r = requests.get(target_url, headers=headers, timeout=12)
+                    soup = BeautifulSoup(r.text, "html.parser")
+                    links = []
+                    for a in soup.find_all("a", href=True):
+                        href = a["href"].strip()
+                        full = urljoin(r.url, href).split("#")[0]
+                        if full.startswith("http") and not is_junk(full):
+                            links.append((full, "Page"))
+                except:
+                    links = []
+
+            # unique
+            seen = set()
+            final_links = []
+            for u, s in links:
+                if u not in seen:
+                    seen.add(u)
+                    final_links.append((u, s))
+
+            results = []
+            with ThreadPoolExecutor(max_workers=20) as ex:
+                futs = {ex.submit(analyze, u, s): u for u, s in final_links}
+                for f in as_completed(futs):
+                    res = f.result()
+                    if res: results.append(res)
+
+            dead = [r for r in results if r["type"] == "Dead Link"]
+            leaks = [r for r in results if r["type"] == "Revenue Leak"]
+            safe = [r for r in results if r["type"] == "Safe Affiliate"]
+            total = len(results)
+            score = max(0, 100 - len(dead)*18 - len(leaks)*12)
+            if total and len(safe)/total >= 0.5: score += 8
+            score = min(100, score)
+
+            if len(safe) == 0:
+                st.markdown(f"""
+                <div class="no-affiliate-box">
+                    <h2 style="margin:0 0 10px 0;color:#fca5a5;">❌ No Affiliate Links Found</h2>
+                    <p style="font-size:17px;"><b>{channel}</b> has not added any affiliate links in the description or on this page.</p>
+                    <p style="opacity:0.85;margin:0;">Only standard / social links were detected.</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            c1,c2,c3,c4,c5 = st.columns(5)
+            with c1: st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">TOTAL</h5><h1 style="color:#00f2fe;margin:6px 0 0;">{total}</h1></div>', unsafe_allow_html=True)
+            with c2: st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">DEAD</h5><h1 style="color:#ef4444;margin:6px 0 0;">{len(dead)}</h1></div>', unsafe_allow_html=True)
+            with c3: st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">LEAKS</h5><h1 style="color:#f59e0b;margin:6px 0 0;">{len(leaks)}</h1></div>', unsafe_allow_html=True)
+            with c4: st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">SAFE</h5><h1 style="color:#22c55e;margin:6px 0 0;">{len(safe)}</h1></div>', unsafe_allow_html=True)
+            with c5: 
+                col = "#22c55e" if score>=75 else "#f59e0b" if score>=45 else "#ef4444"
+                st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">SCORE</h5><h1 style="color:{col};margin:6px 0 0;">{score}</h1></div>', unsafe_allow_html=True)
+
+            t1,t2,t3,t4 = st.tabs([f"🚨 Dead ({len(dead)})", f"💸 Leaks ({len(leaks)})", f"🛡️ Safe ({len(safe)})", f"🌐 All ({total})"])
+
+            def card(item, i):
+                st.markdown(f"""
+                <div class="log-card">
+                    <b>#{i} • {item['status']}</b><br>
+                    <span class="identity-badge">{item['identity']['display']}</span><br><br>
+                    <b>URL:</b> {item['url']}<br>
+                    <b>Final:</b> {item['final_url']}<br>
+                    <b>Network:</b> {item['network']}<br>
+                    <b>Source:</b> {item['source']}
+                </div>
+                """, unsafe_allow_html=True)
+
+            with t1:
+                if not dead: st.success("No dead links found.")
+                for i,x in enumerate(dead,1): card(x,i)
+            with t2:
+                if not leaks: st.success("No revenue leaks found.")
+                for i,x in enumerate(leaks,1): card(x,i)
+            with t3:
+                if not safe: st.info("No safe affiliate links found.")
+                for i,x in enumerate(safe,1): card(x,i)
+            with t4:
+                for i,x in enumerate(results,1): card(x,i)
+
+            if desc:
+                with st.expander("📝 Description Preview"):
+                    st.write(desc[:1200])
+
+            if len(safe) == 0:
+                st.markdown(f"""
+                <div class="fix-card">
+                    <h4>💡 Recommendation for {channel}</h4>
+                    <p>No affiliate links detected. Add high-converting offers from Amazon, ClickBank etc. in the description.</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("---")
+            df = pd.DataFrame(results)
+            st.download_button("📥 Download CSV", df.to_csv(index=False).encode(), "affiliate_report.csv", "text/csv")
