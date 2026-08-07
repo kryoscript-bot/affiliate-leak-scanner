@@ -43,12 +43,34 @@ st.markdown("""
         box-shadow: 0 6px 30px rgba(0, 242, 254, 0.6);
     }
     .log-card {
-        background-color: #111827;
-        padding: 18px;
-        border-radius: 10px;
-        margin-bottom: 12px;
-        border-left: 5px solid #4b5563;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 14px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        position: relative;
+    }
+    .log-card b {
+        color: #111827 !important;
+    }
+    .copy-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 13px;
+        cursor: pointer;
+        color: #374151;
+        transition: all 0.2s;
+        font-weight: 600;
+    }
+    .copy-btn:hover {
+        background: #e5e7eb;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -236,11 +258,17 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                         st.success("Target Workspace Verified: Zero broken links flagged on this sector.")
                     else:
                         for idx, item in enumerate(dead_links_list, 1):
+                            copy_text = f"""Node Index #{idx}
+Originating Link Vector: {item['url']}
+System Flag Status: {item['status']}
+Target Segment Identity: {item['network']}"""
                             st.markdown(f"""
                             <div class="log-card">
-                                <b>Node Index #{idx}</b><br>
-                                <b>Originating Link Vector:</b> {item['url']}<br>
-                                <b>System Flag Status:</b> {item['status']}<br>
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText(`{copy_text.replace('`', '\\`')}`)">📋 Copy</button>
+                                <b>Node Index #{idx}</b><br><br>
+                                <b>Originating Link Vector:</b><br>
+                                {item['url']}<br><br>
+                                <b>System Flag Status:</b> {item['status']}<br><br>
                                 <b>Target Segment Identity:</b> {item['network']}
                             </div>
                             """, unsafe_allow_html=True)
@@ -251,12 +279,20 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                         st.success("Target Verification Clear: Zero merchant inventory leaks active.")
                     else:
                         for idx, item in enumerate(revenue_leaks_list, 1):
+                            copy_text = f"""Leak Event #{idx}
+Campaign Component: {item['url']}
+Resolved Merchant Landing: {item['destination']}
+Telemetry Diagnostic: {item['status']}
+Identified Asset Framework: {item['network']}"""
                             st.markdown(f"""
                             <div class="log-card">
-                                <b>Leak Event #{idx}</b><br>
-                                <b>Campaign Component:</b> {item['url']}<br>
-                                <b>Resolved Merchant Landing:</b> {item['destination']}<br>
-                                <b>Telemetry Diagnostic:</b> {item['status']}<br>
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText(`{copy_text.replace('`', '\\`')}`)">📋 Copy</button>
+                                <b>Leak Event #{idx}</b><br><br>
+                                <b>Campaign Component:</b><br>
+                                {item['url']}<br><br>
+                                <b>Resolved Merchant Landing:</b><br>
+                                {item['destination']}<br><br>
+                                <b>Telemetry Diagnostic:</b> {item['status']}<br><br>
                                 <b>Identified Asset Framework:</b> {item['network']}
                             </div>
                             """, unsafe_allow_html=True)
@@ -267,11 +303,18 @@ if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
                         st.info("Workspace Alert: Zero active high-tier networks identified inside source tree.")
                     else:
                         for idx, item in enumerate(safe_affiliate_list, 1):
+                            copy_text = f"""Active Stream #{idx}
+Source Tracking Vector: {item['url']}
+Final Target Resolution: {item['destination']}
+Classified System Network: {item['network']}"""
                             st.markdown(f"""
                             <div class="log-card">
-                                <b>Active Stream #{idx}</b><br>
-                                <b>Source Tracking Vector:</b> {item['url']}<br>
-                                <b>Final Target Resolution:</b> {item['destination']}<br>
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText(`{copy_text.replace('`', '\\`')}`)">📋 Copy</button>
+                                <b>Active Stream #{idx}</b><br><br>
+                                <b>Source Tracking Vector:</b><br>
+                                {item['url']}<br><br>
+                                <b>Final Target Resolution:</b><br>
+                                {item['destination']}<br><br>
                                 <b>Classified System Network:</b> {item['network']}
                             </div>
                             """, unsafe_allow_html=True)
