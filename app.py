@@ -1,21 +1,17 @@
-
-
 import streamlit as stimport requestsfrom bs4 import BeautifulSoupfrom concurrent.futures import ThreadPoolExecutorimport pandas as pdfrom urllib.parse import urlparse
-# ==============================================================================# 1. ENTERPRISE ENGINE INITIALIZATION & CORE CONFIG# ==============================================================================
+
 st.set_page_config(
     page_title="Affiliate Leak Protocol Engine Pro v4.0", 
     page_icon="⚡", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-# Custom High-End Cyber Dashboard UI Styling Framework
+
 st.markdown("""
     <style>
     .main { background-color: #0b0f19 !important; color: #cbd5e1 !important; font-family: 'Inter', sans-serif; }
     h1 { color: #00f2fe !important; font-weight: 800 !important; letter-spacing: -1.5px; text-shadow: 0 0 15px rgba(0,242,254,0.25); margin-bottom: 5px; }
     h3 { color: #ffffff !important; font-weight: 700 !important; }
-    
-    /* Premium Visual Metric Boxes */
     .metric-container-box {
         background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
         padding: 26px;
@@ -26,8 +22,6 @@ st.markdown("""
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         margin-bottom: 15px;
     }
-    
-    /* Main CTA Scan Action Element */
     .stButton>button {
         background: linear-gradient(90deg, #00f2fe 0%, #4facfe 100%) !important;
         color: #0b0f19 !important;
@@ -44,8 +38,6 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 6px 30px rgba(0, 242, 254, 0.6);
     }
-    
-    /* Result Log Block Wrapper */
     .log-card {
         background-color: #111827;
         padding: 18px;
@@ -55,12 +47,12 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     </style>""", unsafe_allow_html=True)
-# Main Application Structural Header Layout
+
 st.markdown("<h1>⚡ Affiliate Leak Protocol Engine Pro</h1>", unsafe_allow_html=True)
 st.subheader("Global Enterprise Command Center — Next-Gen Multi-Threaded Structural Telemetry")
 st.write("Scan deep directories, landing grids, and dynamic link clouds. This system automatically classifies global affiliate networks, parses response parameters, and isolates active inventory leak vectors.")
-# Target Endpoint Control Sequence Input Nodetarget_url = st.text_input("🎯 Enter Targeted Asset URL Vector (Blog Link, Linktree Page, Social Bio Endpoint):", placeholder="https://yourdomain.com")
-# ==============================================================================# 2. SIGNATURE MATCHING NETWORK MAPS & PAYLOAD SIGNALS# ==============================================================================AFFILIATE_MAP = {
+target_url = st.text_input("🎯 Enter Targeted Asset URL Vector (Blog Link, Linktree Page, Social Bio Endpoint):", placeholder="https://yourdomain.com")
+AFFILIATE_MAP = {
     "amazon": "Amazon Associates Cluster", "amzn.to": "Amazon Associates Cluster",
     "clickbank": "ClickBank Affiliate Network", "shareasale": "ShareASale System Hub",
     "cj.com": "CJ Affiliate Enterprise", "commission-junction": "CJ Affiliate Enterprise",
@@ -81,7 +73,7 @@ OUT_OF_STOCK_SIGNATURES = [
     "product unlisted", "this item is no longer available", "product missing", "product unavailable",
     "backorder only", "out of stock online", "temporarily dead node", "product non-existent"
 ]
-# ==============================================================================# 3. HIGH-SPEED ASYNCHRONOUS SCANNERS & ANALYZERS# ==============================================================================def extract_hyperlinks_async(url):
+def extract_hyperlinks_async(url):
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
@@ -93,7 +85,6 @@ OUT_OF_STOCK_SIGNATURES = [
         soup = BeautifulSoup(response.text, 'html.parser')
         discovered_nodes = set()
         
-        # Pull standard anchor tags
         for element in soup.find_all(['a', 'link'], href=True):
             cleaned_node = element['href'].strip()
             if cleaned_node.startswith(('http://', 'https://')):
@@ -107,40 +98,35 @@ def trace_single_endpoint_health(link_url):
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
         }
-        # Deep trace redirect chains to capture real vendor landing spots
         session_instance = requests.get(link_url, headers=headers, timeout=8, allow_redirects=True)
         final_destination_route = session_instance.url
         
-        # Evaluate Target Network Identifiers
         detected_network = "Standard External Endpoint Node"
         for keyword, label in AFFILIATE_MAP.items():
             if keyword in link_url.lower() or keyword in final_destination_route.lower():
                 detected_network = label
                 break
         
-        # 1. Structural Validation Rules (Dead Drop/Broken Elements)
         if session_instance.status_code >= 400:
             return {
                 "url": link_url, "type": "Dead Link", 
-                "status": f"Broken Path Framework (HTTP {session_instance.status_code})", 
+                "status": f"🔴 Broken Path Framework (HTTP {session_instance.status_code})", 
                 "network": detected_network, "destination": final_destination_route
             }
             
-        # 2. Advanced Dynamic Payload Scrapes (Merchant Revenue Leaks)
         dom_payload = session_instance.text.lower()
         for stock_flag in OUT_OF_STOCK_SIGNATURES:
             if stock_flag in dom_payload:
                 return {
                     "url": link_url, "type": "Revenue Leak", 
-                    "status": "Critical Revenue Leak: Inventory Empty", 
+                    "status": "🟡 Critical Revenue Leak: Inventory Empty", 
                     "network": detected_network, "destination": final_destination_route
                 }
                 
-        # 3. Classify Active Campaign Status
         if detected_network != "Standard External Endpoint Node":
             return {
                 "url": link_url, "type": "Safe Affiliate", 
-                "status": "Campaign Verified Active & Monetized", 
+                "status": "🟢 Campaign Verified Active & Monetized", 
                 "network": detected_network, "destination": final_destination_route
             }
         else:
@@ -153,10 +139,10 @@ def trace_single_endpoint_health(link_url):
     except Exception:
         return {
             "url": link_url, "type": "Dead Link", 
-            "status": "Telemetry Timeout / Network Resolution Defect", 
+            "status": "🔴 Telemetry Timeout / Network Resolution Defect", 
             "network": "Unknown Network Sector", "destination": link_url
         }
-# ==============================================================================# 4. ENGINE CONTROLLER EXECUTION MATRIX# ==============================================================================if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
+if st.button("LAUNCH HIGH-VELOCITY AUDIT ENGINE SEQUENCE"):
     if not target_url:
         st.warning("Action Deferred: Please input an operational target URL sequence.")
     else:
@@ -168,33 +154,32 @@ def trace_single_endpoint_health(link_url):
             elif not extracted_nodes:
                 st.info("Scan Terminal: Zero hyperlinks discovered inside target document payload.")
             else:
-                # Concurrent Thread Processing Loop Execution Array (25 Parallel Workers)
                 with ThreadPoolExecutor(max_workers=25) as execution_pool:
                     telemetry_outputs = list(execution_pool.map(trace_single_endpoint_health, extracted_nodes))
                 
-                # Dynamic Logic Filtering Arrays
                 dead_links_list = [item for item in telemetry_outputs if item["type"] == "Dead Link"]
                 revenue_leaks_list = [item for item in telemetry_outputs if item["type"] == "Revenue Leak"]
                 safe_affiliate_list = [item for item in telemetry_outputs if item["type"] == "Safe Affiliate"]
+                neutral_list = [item for item in telemetry_outputs if item["type"] == "Neutral Route"]
+                
+                st.markdown("---")
+                
+                m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+                with m_col1:
+                    st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">TOTAL SCANNED</h5><h1 style="color:#00f2fe !important;margin:5px 0 0 0;">{len(telemetry_outputs)}</h1></div>', unsafe_allow_html=True)
+                with m_col2:
+                    st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">🚨 DEAD LINKS</h5><h1 style="color:#ff4b4b !important;margin:5px 0 0 0;">{len(dead_links_list)}</h1></div>', unsafe_allow_html=True)
+                with m_col3:
+                    st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">💸 REVENUE LEAKS</h5><h1 style="color:#ffaa00 !important;margin:5px 0 0 0;">{len(revenue_leaks_list)}</h1></div>', unsafe_allow_html=True)
+                with m_col4:
+                    st.markdown(f'<div class="metric-container-box"><h5 style="color:#94a3b8;margin:0;">🛡️ SAFE CAMPAIGNS</h5><h1 style="color:#00cc66 !important;margin:5px 0 0 0;">{len(safe_affiliate_list)}</h1></div>', unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                tab1, tab2, tab3, tab4 = st.tabs([
+                    f"🚨 Dead Links Network ({len(dead_links_list)})", 
+                    f"💸 Revenue Leakage Core ({len(revenue_leaks_list)})", 
 
-neutral_list = [item for item in telemetry_outputs if item["type"] == "Neutral Route"]
-st.markdown("---")
-# Render Cyber Executive Dashboard Matrix
-m_col1, m_col2, m_col3, m_col4 = st.columns(4)
-with m_col1:
-st.markdown(f'TOTAL SCANNED{len(telemetry_outputs)}', unsafe_allow_html=True)
-with m_col2:
-st.markdown(f'🚨 DEAD LINKS{len(dead_links_list)}', unsafe_allow_html=True)
-with m_col3:
-st.markdown(f'💸 REVENUE LEAKS{len(revenue_leaks_list)}', unsafe_allow_html=True)
-with m_col4:
-st.markdown(f'🛡️ SAFE CAMPAIGNS{len(safe_affiliate_list)}', unsafe_allow_html=True)
-st.markdown("
-", unsafe_allow_html=True)
-# Master Decoupled Tabs Workspace Interface Layout
-tab1, tab2, tab3, tab4 = st.tabs([
-f"🚨 Dead Links Network ({len(dead_links_list)})",
-f"💸 Revenue Leakage Core ({len(revenue_leaks_list)})",
 f"🛡️ Active Campaigns Hub ({len(safe_affiliate_list)})",
 f"🌐 General Structural Map ({len(neutral_list)})"
 ])
@@ -254,7 +239,6 @@ if not neutral_list:
 st.info("Workspace Notification: Zero neutral external link traces found.")
 for idx, item in enumerate(neutral_list, 1):
 st.text(f"[{idx}] Endpoint Trace Path: {item['url']}")
-# Global Actionable Export Execution Layer
 st.markdown("---")
 st.subheader("📥 Export Complete Network Matrix Package")
 df = pd.DataFrame(telemetry_outputs)
